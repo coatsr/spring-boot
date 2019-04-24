@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.boot.autoconfigure.security.servlet;
+
+import java.util.function.Supplier;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -38,7 +40,7 @@ public final class PathRequest {
 
 	/**
 	 * Returns a {@link StaticResourceRequest} that can be used to create a matcher for
-	 * {@link StaticResourceLocation Locations}.
+	 * {@link StaticResourceLocation locations}.
 	 * @return a {@link StaticResourceRequest}
 	 */
 	public static StaticResourceRequest toStaticResources() {
@@ -62,21 +64,21 @@ public final class PathRequest {
 	public static final class H2ConsoleRequestMatcher
 			extends ApplicationContextRequestMatcher<H2ConsoleProperties> {
 
-		private RequestMatcher delegate;
+		private volatile RequestMatcher delegate;
 
 		private H2ConsoleRequestMatcher() {
 			super(H2ConsoleProperties.class);
 		}
 
 		@Override
-		protected void initialized(H2ConsoleProperties h2ConsoleProperties) {
+		protected void initialized(Supplier<H2ConsoleProperties> h2ConsoleProperties) {
 			this.delegate = new AntPathRequestMatcher(
-					h2ConsoleProperties.getPath() + "/**");
+					h2ConsoleProperties.get().getPath() + "/**");
 		}
 
 		@Override
 		protected boolean matches(HttpServletRequest request,
-				H2ConsoleProperties context) {
+				Supplier<H2ConsoleProperties> context) {
 			return this.delegate.matches(request);
 		}
 

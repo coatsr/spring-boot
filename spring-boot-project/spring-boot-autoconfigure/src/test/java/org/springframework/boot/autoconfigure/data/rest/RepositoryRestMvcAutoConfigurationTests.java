@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,11 +17,7 @@
 package org.springframework.boot.autoconfigure.data.rest;
 
 import java.net.URI;
-import java.util.Date;
-import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.After;
 import org.junit.Test;
 
@@ -34,18 +30,18 @@ import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.EmbeddedDataSourceConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.boot.web.servlet.context.AnnotationConfigServletWebApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.core.mapping.RepositoryDetectionStrategy.RepositoryDetectionStrategies;
 import org.springframework.data.rest.webmvc.BaseUri;
-import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
+import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
 import org.springframework.data.rest.webmvc.config.RepositoryRestMvcConfiguration;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.mock.web.MockServletContext;
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,7 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class RepositoryRestMvcAutoConfigurationTests {
 
-	private AnnotationConfigWebApplicationContext context;
+	private AnnotationConfigServletWebApplicationContext context;
 
 	@After
 	public void tearDown() {
@@ -146,33 +142,8 @@ public class RepositoryRestMvcAutoConfigurationTests {
 		assertThat(bean.getBaseUri()).isEqualTo(URI.create(""));
 	}
 
-	@Test
-	public void objectMappersAreConfiguredUsingObjectMapperBuilder()
-			throws JsonProcessingException {
-		load(TestConfigurationWithObjectMapperBuilder.class);
-
-		assertThatDateIsFormattedCorrectly("halObjectMapper");
-		assertThatDateIsFormattedCorrectly("objectMapper");
-	}
-
-	@Test
-	public void primaryObjectMapperIsAvailable() {
-		load(TestConfiguration.class);
-		Map<String, ObjectMapper> objectMappers = this.context
-				.getBeansOfType(ObjectMapper.class);
-		assertThat(objectMappers.size()).isGreaterThan(1);
-		this.context.getBean(ObjectMapper.class);
-	}
-
-	public void assertThatDateIsFormattedCorrectly(String beanName)
-			throws JsonProcessingException {
-		ObjectMapper objectMapper = this.context.getBean(beanName, ObjectMapper.class);
-		assertThat(objectMapper.writeValueAsString(new Date(1413387983267L)))
-				.isEqualTo("\"2014-10\"");
-	}
-
 	private void load(Class<?> config, String... environment) {
-		AnnotationConfigWebApplicationContext applicationContext = new AnnotationConfigWebApplicationContext();
+		AnnotationConfigServletWebApplicationContext applicationContext = new AnnotationConfigServletWebApplicationContext();
 		applicationContext.setServletContext(new MockServletContext());
 		applicationContext.register(config, BaseConfiguration.class);
 		TestPropertyValues.of(environment).applyTo(applicationContext);
@@ -180,7 +151,7 @@ public class RepositoryRestMvcAutoConfigurationTests {
 		this.context = applicationContext;
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(EmbeddedDataSourceConfiguration.class)
 	@ImportAutoConfiguration({ HibernateJpaAutoConfiguration.class,
 			JpaRepositoriesAutoConfiguration.class,
@@ -190,7 +161,7 @@ public class RepositoryRestMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@TestAutoConfigurationPackage(City.class)
 	@EnableWebMvc
 	protected static class TestConfiguration {
@@ -207,7 +178,7 @@ public class RepositoryRestMvcAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@TestAutoConfigurationPackage(City.class)
 	@EnableWebMvc
 	static class TestConfigurationWithObjectMapperBuilder {
@@ -221,7 +192,7 @@ public class RepositoryRestMvcAutoConfigurationTests {
 
 	}
 
-	static class TestRepositoryRestConfigurer extends RepositoryRestConfigurerAdapter {
+	static class TestRepositoryRestConfigurer implements RepositoryRestConfigurer {
 
 		@Override
 		public void configureRepositoryRestConfiguration(

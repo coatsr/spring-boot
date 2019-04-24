@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.boot.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Locale;
 
 import javax.sql.DataSource;
 
@@ -96,7 +97,7 @@ public enum EmbeddedDatabaseConnection {
 	 */
 	public String getUrl(String databaseName) {
 		Assert.hasText(databaseName, "DatabaseName must not be empty");
-		return (this.url != null ? String.format(this.url, databaseName) : null);
+		return (this.url != null) ? String.format(this.url, databaseName) : null;
 	}
 
 	/**
@@ -155,7 +156,7 @@ public enum EmbeddedDatabaseConnection {
 			if (productName == null) {
 				return false;
 			}
-			productName = productName.toUpperCase();
+			productName = productName.toUpperCase(Locale.ENGLISH);
 			EmbeddedDatabaseConnection[] candidates = EmbeddedDatabaseConnection.values();
 			for (EmbeddedDatabaseConnection candidate : candidates) {
 				if (candidate != NONE && productName.contains(candidate.name())) {

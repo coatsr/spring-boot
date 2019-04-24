@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package org.springframework.boot.env;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Before;
@@ -38,12 +39,12 @@ public class OriginTrackedYamlLoaderTests {
 
 	private OriginTrackedYamlLoader loader;
 
-	private Map<String, Object> result;
+	private List<Map<String, Object>> result;
 
 	@Before
 	public void setUp() {
 		Resource resource = new ClassPathResource("test-yaml.yml", getClass());
-		this.loader = new OriginTrackedYamlLoader(resource, null);
+		this.loader = new OriginTrackedYamlLoader(resource);
 	}
 
 	@Test
@@ -91,14 +92,6 @@ public class OriginTrackedYamlLoaderTests {
 	}
 
 	@Test
-	public void processWithActiveProfile() {
-		Resource resource = new ClassPathResource("test-yaml.yml", getClass());
-		this.loader = new OriginTrackedYamlLoader(resource, "development");
-		Map<String, Object> result = this.loader.load();
-		assertThat(result.get("name").toString()).isEqualTo("Test Name");
-	}
-
-	@Test
 	public void processListOfMaps() {
 		OriginTrackedValue name = getValue("example.foo[0].name");
 		OriginTrackedValue url = getValue("example.foo[0].url");
@@ -106,7 +99,7 @@ public class OriginTrackedYamlLoaderTests {
 		OriginTrackedValue bar2 = getValue("example.foo[0].bar[1].bar2");
 		assertThat(name.toString()).isEqualTo("springboot");
 		assertThat(getLocation(name)).isEqualTo("22:15");
-		assertThat(url.toString()).isEqualTo("http://springboot.com");
+		assertThat(url.toString()).isEqualTo("https://springboot.example.com/");
 		assertThat(getLocation(url)).isEqualTo("23:14");
 		assertThat(bar1.toString()).isEqualTo("baz");
 		assertThat(getLocation(bar1)).isEqualTo("25:19");
@@ -128,7 +121,7 @@ public class OriginTrackedYamlLoaderTests {
 		if (this.result == null) {
 			this.result = this.loader.load();
 		}
-		return (OriginTrackedValue) this.result.get(name);
+		return (OriginTrackedValue) this.result.get(0).get(name);
 	}
 
 	private String getLocation(OriginTrackedValue value) {

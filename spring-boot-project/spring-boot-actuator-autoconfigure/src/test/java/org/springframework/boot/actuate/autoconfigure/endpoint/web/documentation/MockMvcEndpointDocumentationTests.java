@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,8 +35,8 @@ import org.springframework.web.context.WebApplicationContext;
  *
  * @author Andy Wilkinson
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest
+@RunWith(SpringRunner.class)
 public abstract class MockMvcEndpointDocumentationTests
 		extends AbstractEndpointDocumentationTests {
 
@@ -49,7 +49,7 @@ public abstract class MockMvcEndpointDocumentationTests
 	private WebApplicationContext applicationContext;
 
 	@Before
-	public void before() {
+	public void setup() {
 		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.applicationContext)
 				.apply(MockMvcRestDocumentation
 						.documentationConfiguration(this.restDocumentation).uris())

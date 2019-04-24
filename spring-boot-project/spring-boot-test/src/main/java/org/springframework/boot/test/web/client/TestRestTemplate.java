@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.boot.test.web.client;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
@@ -37,6 +39,9 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContextBuilder;
 
+import org.springframework.beans.BeanInstantiationException;
+import org.springframework.beans.BeanUtils;
+import org.springframework.boot.web.client.ClientHttpRequestFactorySupplier;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.client.RootUriTemplateHandler;
 import org.springframework.core.ParameterizedTypeReference;
@@ -45,12 +50,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.http.client.support.BasicAuthorizationInterceptor;
+import org.springframework.http.client.InterceptingClientHttpRequestFactory;
+import org.springframework.http.client.support.BasicAuthenticationInterceptor;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RequestCallback;
 import org.springframework.web.client.ResponseExtractor;
@@ -127,15 +134,16 @@ public class TestRestTemplate {
 	 */
 	public TestRestTemplate(RestTemplateBuilder restTemplateBuilder, String username,
 			String password, HttpClientOption... httpClientOptions) {
-		this(buildRestTemplate(restTemplateBuilder), username, password,
-				httpClientOptions);
+		this((restTemplateBuilder != null) ? restTemplateBuilder.build() : null, username,
+				password, httpClientOptions);
 	}
 
 	private TestRestTemplate(RestTemplate restTemplate, String username, String password,
 			HttpClientOption... httpClientOptions) {
 		Assert.notNull(restTemplate, "RestTemplate must not be null");
 		this.httpClientOptions = httpClientOptions;
-		if (ClassUtils.isPresent("org.apache.http.client.config.RequestConfig", null)) {
+		if (getRequestFactoryClass(restTemplate)
+				.isAssignableFrom(HttpComponentsClientHttpRequestFactory.class)) {
 			restTemplate.setRequestFactory(
 					new CustomHttpComponentsClientHttpRequestFactory(httpClientOptions));
 		}
@@ -144,10 +152,18 @@ public class TestRestTemplate {
 		this.restTemplate = restTemplate;
 	}
 
-	private static RestTemplate buildRestTemplate(
-			RestTemplateBuilder restTemplateBuilder) {
-		Assert.notNull(restTemplateBuilder, "RestTemplateBuilder must not be null");
-		return restTemplateBuilder.build();
+	private Class<? extends ClientHttpRequestFactory> getRequestFactoryClass(
+			RestTemplate restTemplate) {
+		ClientHttpRequestFactory requestFactory = restTemplate.getRequestFactory();
+		if (InterceptingClientHttpRequestFactory.class
+				.isAssignableFrom(requestFactory.getClass())) {
+			Field requestFactoryField = ReflectionUtils.findField(RestTemplate.class,
+					"requestFactory");
+			ReflectionUtils.makeAccessible(requestFactoryField);
+			requestFactory = (ClientHttpRequestFactory) ReflectionUtils
+					.getField(requestFactoryField, restTemplate);
+		}
+		return requestFactory.getClass();
 	}
 
 	private void addAuthentication(RestTemplate restTemplate, String username,
@@ -160,8 +176,8 @@ public class TestRestTemplate {
 			interceptors = Collections.emptyList();
 		}
 		interceptors = new ArrayList<>(interceptors);
-		interceptors.removeIf(BasicAuthorizationInterceptor.class::isInstance);
-		interceptors.add(new BasicAuthorizationInterceptor(username, password));
+		interceptors.removeIf(BasicAuthenticationInterceptor.class::isInstance);
+		interceptors.add(new BasicAuthenticationInterceptor(username, password));
 		restTemplate.setInterceptors(interceptors);
 	}
 
@@ -810,7 +826,7 @@ public class TestRestTemplate {
 	 * {@link ParameterizedTypeReference} is used to pass generic type information:
 	 * <pre class="code">
 	 * ParameterizedTypeReference&lt;List&lt;MyBean&gt;&gt; myBean = new ParameterizedTypeReference&lt;List&lt;MyBean&gt;&gt;() {};
-	 * ResponseEntity&lt;List&lt;MyBean&gt;&gt; response = template.exchange(&quot;http://example.com&quot;,HttpMethod.GET, null, myBean);
+	 * ResponseEntity&lt;List&lt;MyBean&gt;&gt; response = template.exchange(&quot;https://example.com&quot;,HttpMethod.GET, null, myBean);
 	 * </pre>
 	 * @param url the URL
 	 * @param method the HTTP method (GET, POST, etc)
@@ -838,7 +854,7 @@ public class TestRestTemplate {
 	 * {@link ParameterizedTypeReference} is used to pass generic type information:
 	 * <pre class="code">
 	 * ParameterizedTypeReference&lt;List&lt;MyBean&gt;&gt; myBean = new ParameterizedTypeReference&lt;List&lt;MyBean&gt;&gt;() {};
-	 * ResponseEntity&lt;List&lt;MyBean&gt;&gt; response = template.exchange(&quot;http://example.com&quot;,HttpMethod.GET, null, myBean);
+	 * ResponseEntity&lt;List&lt;MyBean&gt;&gt; response = template.exchange(&quot;https://example.com&quot;,HttpMethod.GET, null, myBean);
 	 * </pre>
 	 * @param url the URL
 	 * @param method the HTTP method (GET, POST, etc)
@@ -866,7 +882,7 @@ public class TestRestTemplate {
 	 * {@link ParameterizedTypeReference} is used to pass generic type information:
 	 * <pre class="code">
 	 * ParameterizedTypeReference&lt;List&lt;MyBean&gt;&gt; myBean = new ParameterizedTypeReference&lt;List&lt;MyBean&gt;&gt;() {};
-	 * ResponseEntity&lt;List&lt;MyBean&gt;&gt; response = template.exchange(&quot;http://example.com&quot;,HttpMethod.GET, null, myBean);
+	 * ResponseEntity&lt;List&lt;MyBean&gt;&gt; response = template.exchange(&quot;https://example.com&quot;,HttpMethod.GET, null, myBean);
 	 * </pre>
 	 * @param url the URL
 	 * @param method the HTTP method (GET, POST, etc)
@@ -892,7 +908,7 @@ public class TestRestTemplate {
 	 * response as {@link ResponseEntity}. Typically used in combination with the static
 	 * builder methods on {@code RequestEntity}, for instance: <pre class="code">
 	 * MyRequest body = ...
-	 * RequestEntity request = RequestEntity.post(new URI(&quot;http://example.com/foo&quot;)).accept(MediaType.APPLICATION_JSON).body(body);
+	 * RequestEntity request = RequestEntity.post(new URI(&quot;https://example.com/foo&quot;)).accept(MediaType.APPLICATION_JSON).body(body);
 	 * ResponseEntity&lt;MyResponse&gt; response = template.exchange(request, MyResponse.class);
 	 * </pre>
 	 * @param requestEntity the entity to write to the request
@@ -913,7 +929,7 @@ public class TestRestTemplate {
 	 * response as {@link ResponseEntity}. The given {@link ParameterizedTypeReference} is
 	 * used to pass generic type information: <pre class="code">
 	 * MyRequest body = ...
-	 * RequestEntity request = RequestEntity.post(new URI(&quot;http://example.com/foo&quot;)).accept(MediaType.APPLICATION_JSON).body(body);
+	 * RequestEntity request = RequestEntity.post(new URI(&quot;https://example.com/foo&quot;)).accept(MediaType.APPLICATION_JSON).body(body);
 	 * ParameterizedTypeReference&lt;List&lt;MyResponse&gt;&gt; myBean = new ParameterizedTypeReference&lt;List&lt;MyResponse&gt;&gt;() {};
 	 * ResponseEntity&lt;List&lt;MyResponse&gt;&gt; response = template.exchange(request, myBean);
 	 * </pre>
@@ -1011,23 +1027,33 @@ public class TestRestTemplate {
 	/**
 	 * Creates a new {@code TestRestTemplate} with the same configuration as this one,
 	 * except that it will send basic authorization headers using the given
-	 * {@code username} and {@code password}.
+	 * {@code username} and {@code password}. The request factory used is a new instance
+	 * of the underlying {@link RestTemplate}'s request factory type (when possible).
 	 * @param username the username
 	 * @param password the password
 	 * @return the new template
 	 * @since 1.4.1
 	 */
 	public TestRestTemplate withBasicAuth(String username, String password) {
-		RestTemplate restTemplate = new RestTemplate();
-		restTemplate.setMessageConverters(getRestTemplate().getMessageConverters());
-		restTemplate.setInterceptors(getRestTemplate().getInterceptors());
-		restTemplate.setRequestFactory(getRestTemplate().getRequestFactory());
-		restTemplate.setUriTemplateHandler(getRestTemplate().getUriTemplateHandler());
-		TestRestTemplate testRestTemplate = new TestRestTemplate(restTemplate, username,
-				password, this.httpClientOptions);
-		testRestTemplate.getRestTemplate()
-				.setErrorHandler(getRestTemplate().getErrorHandler());
-		return testRestTemplate;
+		RestTemplate restTemplate = new RestTemplateBuilder()
+				.requestFactory(getRequestFactorySupplier())
+				.messageConverters(getRestTemplate().getMessageConverters())
+				.interceptors(getRestTemplate().getInterceptors())
+				.uriTemplateHandler(getRestTemplate().getUriTemplateHandler()).build();
+		return new TestRestTemplate(restTemplate, username, password,
+				this.httpClientOptions);
+	}
+
+	private Supplier<ClientHttpRequestFactory> getRequestFactorySupplier() {
+		return () -> {
+			try {
+				return BeanUtils
+						.instantiateClass(getRequestFactoryClass(getRestTemplate()));
+			}
+			catch (BeanInstantiationException ex) {
+				return new ClientHttpRequestFactorySupplier().get();
+			}
+		};
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })

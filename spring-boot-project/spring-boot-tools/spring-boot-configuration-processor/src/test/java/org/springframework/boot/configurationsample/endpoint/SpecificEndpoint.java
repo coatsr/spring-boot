@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,7 @@ import org.springframework.boot.configurationsample.ReadOperation;
 import org.springframework.lang.Nullable;
 
 /**
- * An meta-annotated endpoint similar to {@code @WebEndpoint} or {@code @JmxEndpoint} in
+ * A meta-annotated endpoint similar to {@code @WebEndpoint} or {@code @JmxEndpoint} in
  * Spring Boot. Also with a package private read operation that has an optional argument.
  *
  * @author Stephane Nicoll

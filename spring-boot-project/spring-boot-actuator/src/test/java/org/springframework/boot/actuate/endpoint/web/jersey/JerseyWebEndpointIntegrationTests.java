@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
 package org.springframework.boot.actuate.endpoint.web.jersey;
 
 import java.io.IOException;
-import java.security.Principal;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -25,7 +25,6 @@ import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.ext.ContextResolver;
 
@@ -47,6 +46,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestWrapper;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -86,7 +90,7 @@ public class JerseyWebEndpointIntegrationTests extends
 		// Jersey doesn't support the general error page handling
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class JerseyConfiguration {
 
 		@Bean
@@ -120,7 +124,7 @@ public class JerseyWebEndpointIntegrationTests extends
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class AuthenticatedConfiguration {
 
 		@Bean
@@ -131,32 +135,21 @@ public class JerseyWebEndpointIntegrationTests extends
 				protected void doFilterInternal(HttpServletRequest request,
 						HttpServletResponse response, FilterChain filterChain)
 						throws ServletException, IOException {
-					filterChain.doFilter(new MockPrincipalWrapper(request), response);
+					SecurityContext context = SecurityContextHolder.createEmptyContext();
+					context.setAuthentication(new UsernamePasswordAuthenticationToken(
+							"Alice", "secret",
+							Arrays.asList(new SimpleGrantedAuthority("ROLE_ACTUATOR"))));
+					SecurityContextHolder.setContext(context);
+					try {
+						filterChain.doFilter(new SecurityContextHolderAwareRequestWrapper(
+								request, "ROLE_"), response);
+					}
+					finally {
+						SecurityContextHolder.clearContext();
+					}
 				}
 
 			};
-		}
-
-	}
-
-	private static class MockPrincipalWrapper extends HttpServletRequestWrapper {
-
-		MockPrincipalWrapper(HttpServletRequest request) {
-			super(request);
-		}
-
-		@Override
-		public Principal getUserPrincipal() {
-			return new MockPrincipal();
-		}
-
-	}
-
-	private static class MockPrincipal implements Principal {
-
-		@Override
-		public String getName() {
-			return "Alice";
 		}
 
 	}

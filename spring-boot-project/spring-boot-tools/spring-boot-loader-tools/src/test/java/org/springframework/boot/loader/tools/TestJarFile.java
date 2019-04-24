@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -123,7 +123,7 @@ public class TestJarFile {
 	public File getFile(String extension) throws IOException {
 		File file = this.temporaryFolder.newFile();
 		file = new File(file.getParent(), file.getName() + "." + extension);
-		ZipUtil.pack(this.entries.toArray(new ZipEntrySource[this.entries.size()]), file);
+		ZipUtil.pack(this.entries.toArray(new ZipEntrySource[0]), file);
 		return file;
 	}
 

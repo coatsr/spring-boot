@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,9 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.MockitoAnnotations;
 
 import org.springframework.beans.BeansException;
@@ -43,6 +41,7 @@ import org.springframework.core.type.StandardAnnotationMetadata;
 import org.springframework.mock.env.MockEnvironment;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 /**
  * Tests for {@link AutoConfigurationImportSelector}
@@ -60,9 +59,6 @@ public class AutoConfigurationImportSelectorTests {
 	private final MockEnvironment environment = new MockEnvironment();
 
 	private List<AutoConfigurationImportFilter> filters = new ArrayList<>();
-
-	@Rule
-	public ExpectedException expected = ExpectedException.none();
 
 	@Before
 	public void setup() {
@@ -173,14 +169,14 @@ public class AutoConfigurationImportSelectorTests {
 
 	@Test
 	public void nonAutoConfigurationClassExclusionsShouldThrowException() {
-		this.expected.expect(IllegalStateException.class);
-		selectImports(EnableAutoConfigurationWithFaultyClassExclude.class);
+		assertThatIllegalStateException().isThrownBy(
+				() -> selectImports(EnableAutoConfigurationWithFaultyClassExclude.class));
 	}
 
 	@Test
 	public void nonAutoConfigurationClassNameExclusionsWhenPresentOnClassPathShouldThrowException() {
-		this.expected.expect(IllegalStateException.class);
-		selectImports(EnableAutoConfigurationWithFaultyClassNameExclude.class);
+		assertThatIllegalStateException().isThrownBy(() -> selectImports(
+				EnableAutoConfigurationWithFaultyClassNameExclude.class));
 	}
 
 	@Test
@@ -188,8 +184,8 @@ public class AutoConfigurationImportSelectorTests {
 		this.environment.setProperty("spring.autoconfigure.exclude",
 				"org.springframework.boot.autoconfigure."
 						+ "AutoConfigurationImportSelectorTests.TestConfiguration");
-		this.expected.expect(IllegalStateException.class);
-		selectImports(BasicEnableAutoConfiguration.class);
+		assertThatIllegalStateException()
+				.isThrownBy(() -> selectImports(BasicEnableAutoConfiguration.class));
 	}
 
 	@Test
@@ -287,7 +283,7 @@ public class AutoConfigurationImportSelectorTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	private class TestConfiguration {
 
 	}
@@ -307,12 +303,14 @@ public class AutoConfigurationImportSelectorTests {
 
 	}
 
-	@EnableAutoConfiguration(excludeName = "org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration")
+	@EnableAutoConfiguration(
+			excludeName = "org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration")
 	private class EnableAutoConfigurationWithClassNameExclusions {
 
 	}
 
-	@EnableAutoConfiguration(exclude = MustacheAutoConfiguration.class, excludeName = "org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration")
+	@EnableAutoConfiguration(exclude = MustacheAutoConfiguration.class,
+			excludeName = "org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration")
 	private class EnableAutoConfigurationWithClassAndClassNameExclusions {
 
 	}
@@ -322,17 +320,20 @@ public class AutoConfigurationImportSelectorTests {
 
 	}
 
-	@EnableAutoConfiguration(excludeName = "org.springframework.boot.autoconfigure.AutoConfigurationImportSelectorTests.TestConfiguration")
+	@EnableAutoConfiguration(
+			excludeName = "org.springframework.boot.autoconfigure.AutoConfigurationImportSelectorTests.TestConfiguration")
 	private class EnableAutoConfigurationWithFaultyClassNameExclude {
 
 	}
 
-	@EnableAutoConfiguration(excludeName = "org.springframework.boot.autoconfigure.DoesNotExist1")
+	@EnableAutoConfiguration(
+			excludeName = "org.springframework.boot.autoconfigure.DoesNotExist1")
 	private class EnableAutoConfigurationWithAbsentClassNameExclude {
 
 	}
 
-	@SpringBootApplication(excludeName = "org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration")
+	@SpringBootApplication(
+			excludeName = "org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration")
 	private class SpringBootApplicationWithClassNameExclusions {
 
 	}

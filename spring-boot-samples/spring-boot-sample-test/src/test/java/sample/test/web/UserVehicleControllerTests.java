@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package sample.test.web;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import sample.test.WelcomeCommandLineRunner;
@@ -99,10 +100,12 @@ public class UserVehicleControllerTests {
 		this.mvc.perform(get("/sboot/vehicle")).andExpect(status().isNotFound());
 	}
 
-	@Test(expected = NoSuchBeanDefinitionException.class)
+	@Test
 	public void welcomeCommandLineRunnerShouldBeAvailable() {
 		// Since we're a @WebMvcTest WelcomeCommandLineRunner should not be available.
-		this.applicationContext.getBean(WelcomeCommandLineRunner.class);
+		Assertions.assertThatThrownBy(
+				() -> this.applicationContext.getBean(WelcomeCommandLineRunner.class))
+				.isInstanceOf(NoSuchBeanDefinitionException.class);
 	}
 
 }

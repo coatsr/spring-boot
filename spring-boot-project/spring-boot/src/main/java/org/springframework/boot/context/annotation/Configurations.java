@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -34,6 +35,7 @@ import org.springframework.core.OrderComparator;
 import org.springframework.core.Ordered;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * A set of {@link Configuration @Configuration} classes that can be registered in
@@ -114,12 +116,17 @@ public abstract class Configurations {
 	 * @return configuration classes in registration order
 	 */
 	public static Class<?>[] getClasses(Collection<Configurations> configurations) {
-		List<Configurations> orderedConfigurations = new ArrayList<>(configurations);
-		orderedConfigurations.sort(COMPARATOR);
-		List<Configurations> collated = collate(orderedConfigurations);
-		return collated.stream().flatMap((c) -> c.getClasses().stream())
-				.collect(Collectors.toCollection(LinkedHashSet::new))
-				.toArray(new Class<?>[0]);
+		List<Configurations> ordered = new ArrayList<>(configurations);
+		ordered.sort(COMPARATOR);
+		List<Configurations> collated = collate(ordered);
+		LinkedHashSet<Class<?>> classes = collated.stream()
+				.flatMap(Configurations::streamClasses)
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+		return ClassUtils.toClassArray(classes);
+	}
+
+	private static Stream<Class<?>> streamClasses(Configurations configurations) {
+		return configurations.getClasses().stream();
 	}
 
 	private static List<Configurations> collate(

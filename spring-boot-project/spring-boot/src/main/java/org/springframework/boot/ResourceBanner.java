@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -107,8 +107,8 @@ public class ResourceBanner implements Banner {
 	}
 
 	protected String getApplicationVersion(Class<?> sourceClass) {
-		Package sourcePackage = (sourceClass == null ? null : sourceClass.getPackage());
-		return (sourcePackage == null ? null : sourcePackage.getImplementationVersion());
+		Package sourcePackage = (sourceClass != null) ? sourceClass.getPackage() : null;
+		return (sourcePackage != null) ? sourcePackage.getImplementationVersion() : null;
 	}
 
 	protected String getBootVersion() {
@@ -119,7 +119,7 @@ public class ResourceBanner implements Banner {
 		if (version == null) {
 			return "";
 		}
-		return (format ? " (v" + version + ")" : version);
+		return format ? " (v" + version + ")" : version;
 	}
 
 	private PropertyResolver getAnsiResolver() {
@@ -132,14 +132,14 @@ public class ResourceBanner implements Banner {
 		MutablePropertySources sources = new MutablePropertySources();
 		String applicationTitle = getApplicationTitle(sourceClass);
 		Map<String, Object> titleMap = Collections.singletonMap("application.title",
-				(applicationTitle == null ? "" : applicationTitle));
+				(applicationTitle != null) ? applicationTitle : "");
 		sources.addFirst(new MapPropertySource("title", titleMap));
 		return new PropertySourcesPropertyResolver(sources);
 	}
 
 	protected String getApplicationTitle(Class<?> sourceClass) {
-		Package sourcePackage = (sourceClass == null ? null : sourceClass.getPackage());
-		return (sourcePackage == null ? null : sourcePackage.getImplementationTitle());
+		Package sourcePackage = (sourceClass != null) ? sourceClass.getPackage() : null;
+		return (sourcePackage != null) ? sourcePackage.getImplementationTitle() : null;
 	}
 
 }

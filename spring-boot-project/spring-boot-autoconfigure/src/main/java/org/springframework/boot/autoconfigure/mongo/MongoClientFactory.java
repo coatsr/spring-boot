@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -81,8 +81,8 @@ public class MongoClientFactory {
 		if (options == null) {
 			options = MongoClientOptions.builder().build();
 		}
-		String host = this.properties.getHost() == null ? "localhost"
-				: this.properties.getHost();
+		String host = (this.properties.getHost() != null) ? this.properties.getHost()
+				: "localhost";
 		return new MongoClient(Collections.singletonList(new ServerAddress(host, port)),
 				options);
 	}
@@ -101,8 +101,8 @@ public class MongoClientFactory {
 			int port = getValue(properties.getPort(), MongoProperties.DEFAULT_PORT);
 			List<ServerAddress> seeds = Collections
 					.singletonList(new ServerAddress(host, port));
-			return credentials == null ? new MongoClient(seeds, options)
-					: new MongoClient(seeds, credentials, options);
+			return (credentials != null) ? new MongoClient(seeds, credentials, options)
+					: new MongoClient(seeds, options);
 		}
 		return createMongoClient(MongoProperties.DEFAULT_URI, options);
 	}
@@ -112,7 +112,7 @@ public class MongoClientFactory {
 	}
 
 	private <T> T getValue(T value, T fallback) {
-		return (value == null ? fallback : value);
+		return (value != null) ? value : fallback;
 	}
 
 	private boolean hasCustomAddress() {

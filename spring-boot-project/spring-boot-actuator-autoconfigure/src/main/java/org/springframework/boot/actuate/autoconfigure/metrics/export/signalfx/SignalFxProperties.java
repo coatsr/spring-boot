@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,8 @@
 
 package org.springframework.boot.actuate.autoconfigure.metrics.export.signalfx;
 
+import java.time.Duration;
+
 import org.springframework.boot.actuate.autoconfigure.metrics.export.properties.StepRegistryProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -24,10 +26,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @author Jon Schneider
  * @author Andy Wilkinson
+ * @author Stephane Nicoll
  * @since 2.0.0
  */
 @ConfigurationProperties(prefix = "management.metrics.export.signalfx")
 public class SignalFxProperties extends StepRegistryProperties {
+
+	/**
+	 * Step size (i.e. reporting frequency) to use.
+	 */
+	private Duration step = Duration.ofSeconds(10);
 
 	/**
 	 * SignalFX access token.
@@ -35,9 +43,25 @@ public class SignalFxProperties extends StepRegistryProperties {
 	private String accessToken;
 
 	/**
-	 * Optional custom URI for the SignalFX API.
+	 * URI to ship metrics to.
 	 */
-	private String uri;
+	private String uri = "https://ingest.signalfx.com";
+
+	/**
+	 * Uniquely identifies the app instance that is publishing metrics to SignalFx.
+	 * Defaults to the local host name.
+	 */
+	private String source;
+
+	@Override
+	public Duration getStep() {
+		return this.step;
+	}
+
+	@Override
+	public void setStep(Duration step) {
+		this.step = step;
+	}
 
 	public String getAccessToken() {
 		return this.accessToken;
@@ -53,6 +77,14 @@ public class SignalFxProperties extends StepRegistryProperties {
 
 	public void setUri(String uri) {
 		this.uri = uri;
+	}
+
+	public String getSource() {
+		return this.source;
+	}
+
+	public void setSource(String source) {
+		this.source = source;
 	}
 
 }

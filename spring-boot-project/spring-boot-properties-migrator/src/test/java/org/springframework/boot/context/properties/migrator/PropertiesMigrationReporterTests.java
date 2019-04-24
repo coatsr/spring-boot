@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -152,6 +152,19 @@ public class PropertiesMigrationReporterTests {
 						+ "'test.inconvertible' uses an incompatible target type");
 	}
 
+	@Test
+	public void invalidReplacementHandled() throws IOException {
+		this.environment.getPropertySources().addFirst(loadPropertySource("first",
+				"config/config-error-invalid-replacement.properties"));
+		String report = createErrorReport(
+				loadRepository("metadata/sample-metadata-invalid-replacement.json"));
+		assertThat(report).isNotNull();
+		assertThat(report).containsSubsequence("Property source 'first'",
+				"deprecated.six.test", "Line: 1", "Reason",
+				"No metadata found for replacement key 'does.not.exist'");
+		assertThat(report).doesNotContain("null");
+	}
+
 	private List<String> mapToNames(PropertySources sources) {
 		List<String> names = new ArrayList<>();
 		for (PropertySource<?> source : sources) {
@@ -180,10 +193,10 @@ public class PropertiesMigrationReporterTests {
 	private PropertySource<?> loadPropertySource(String name, String path)
 			throws IOException {
 		ClassPathResource resource = new ClassPathResource(path);
-		PropertySource<?> propertySource = new PropertiesPropertySourceLoader().load(name,
-				resource, null);
-		assertThat(propertySource).isNotNull();
-		return propertySource;
+		List<PropertySource<?>> propertySources = new PropertiesPropertySourceLoader()
+				.load(name, resource);
+		assertThat(propertySources).isNotEmpty();
+		return propertySources.get(0);
 	}
 
 	private ConfigurationMetadataRepository loadRepository(String... content) {

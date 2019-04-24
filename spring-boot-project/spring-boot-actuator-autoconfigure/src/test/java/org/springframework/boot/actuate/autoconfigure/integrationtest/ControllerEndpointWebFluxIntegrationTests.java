@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,8 +61,8 @@ public class ControllerEndpointWebFluxIntegrationTests {
 				new TestingAuthenticationToken("user", "N/A", "ROLE_ACTUATOR"));
 		this.context = new AnnotationConfigReactiveWebApplicationContext();
 		this.context.register(DefaultConfiguration.class, ExampleController.class);
-		TestPropertyValues.of("management.endpoints.web.exposure.include=*").applyTo(
-				this.context);
+		TestPropertyValues.of("management.endpoints.web.exposure.include=*")
+				.applyTo(this.context);
 		this.context.refresh();
 		WebTestClient webClient = WebTestClient.bindToApplicationContext(this.context)
 				.build();

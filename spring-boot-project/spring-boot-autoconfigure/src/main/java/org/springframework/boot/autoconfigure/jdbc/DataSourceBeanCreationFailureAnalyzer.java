@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -58,12 +58,12 @@ class DataSourceBeanCreationFailureAnalyzer
 
 	private String getDescription(DataSourceBeanCreationException cause) {
 		StringBuilder description = new StringBuilder();
-		description.append("Failed to auto-configure a DataSource: ");
-		if (!this.environment.containsProperty("spring.datasource.url")) {
-			description.append("'spring.datasource.url' is not specified and ");
+		description.append("Failed to configure a DataSource: ");
+		if (!StringUtils.hasText(cause.getProperties().getUrl())) {
+			description.append("'url' attribute is not specified and ");
 		}
-		description.append(
-				String.format("no embedded datasource could be auto-configured.%n"));
+		description
+				.append(String.format("no embedded datasource could be configured.%n"));
 		description.append(String.format("%nReason: %s%n", cause.getMessage()));
 		return description.toString();
 	}

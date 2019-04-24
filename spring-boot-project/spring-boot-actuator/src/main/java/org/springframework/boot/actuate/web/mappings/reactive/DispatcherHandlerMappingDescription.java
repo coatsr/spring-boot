@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,9 +30,13 @@ public class DispatcherHandlerMappingDescription {
 
 	private final String handler;
 
-	DispatcherHandlerMappingDescription(String predicate, String handler) {
+	private final DispatcherHandlerMappingDetails details;
+
+	DispatcherHandlerMappingDescription(String predicate, String handler,
+			DispatcherHandlerMappingDetails details) {
 		this.predicate = predicate;
 		this.handler = handler;
+		this.details = details;
 	}
 
 	public String getHandler() {
@@ -41,6 +45,10 @@ public class DispatcherHandlerMappingDescription {
 
 	public String getPredicate() {
 		return this.predicate;
+	}
+
+	public DispatcherHandlerMappingDetails getDetails() {
+		return this.details;
 	}
 
 }

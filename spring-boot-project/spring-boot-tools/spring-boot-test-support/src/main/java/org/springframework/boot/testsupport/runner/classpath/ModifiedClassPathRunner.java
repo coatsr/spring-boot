@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -51,7 +52,9 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.TestClass;
 
-import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.MergedAnnotation;
+import org.springframework.core.annotation.MergedAnnotations;
+import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 
@@ -65,6 +68,9 @@ import org.springframework.util.StringUtils;
  * @author Andy Wilkinson
  */
 public class ModifiedClassPathRunner extends BlockJUnit4ClassRunner {
+
+	private static final Pattern INTELLIJ_CLASSPATH_JAR_PATTERN = Pattern
+			.compile(".*classpath(\\d+)?\\.jar");
 
 	public ModifiedClassPathRunner(Class<?> testClass) throws InitializationError {
 		super(testClass);
@@ -98,14 +104,14 @@ public class ModifiedClassPathRunner extends BlockJUnit4ClassRunner {
 	private URL[] extractUrls(ClassLoader classLoader) throws Exception {
 		List<URL> extractedUrls = new ArrayList<>();
 		doExtractUrls(classLoader).forEach((URL url) -> {
-			if (isSurefireBooterJar(url)) {
+			if (isManifestOnlyJar(url)) {
 				extractedUrls.addAll(extractUrlsFromManifestClassPath(url));
 			}
 			else {
 				extractedUrls.add(url);
 			}
 		});
-		return extractedUrls.toArray(new URL[extractedUrls.size()]);
+		return extractedUrls.toArray(new URL[0]);
 	}
 
 	private Stream<URL> doExtractUrls(ClassLoader classLoader) throws Exception {
@@ -125,8 +131,27 @@ public class ModifiedClassPathRunner extends BlockJUnit4ClassRunner {
 		}
 	}
 
+	private boolean isManifestOnlyJar(URL url) {
+		return isSurefireBooterJar(url) || isShortenedIntelliJJar(url);
+	}
+
 	private boolean isSurefireBooterJar(URL url) {
 		return url.getPath().contains("surefirebooter");
+	}
+
+	private boolean isShortenedIntelliJJar(URL url) {
+		String urlPath = url.getPath();
+		boolean isCandidate = INTELLIJ_CLASSPATH_JAR_PATTERN.matcher(urlPath).matches();
+		if (isCandidate) {
+			try {
+				Attributes attributes = getManifestMainAttributesFromUrl(url);
+				String createdBy = attributes.getValue("Created-By");
+				return createdBy != null && createdBy.contains("IntelliJ");
+			}
+			catch (Exception ex) {
+			}
+		}
+		return false;
 	}
 
 	private List<URL> extractUrlsFromManifestClassPath(URL booterJar) {
@@ -143,31 +168,40 @@ public class ModifiedClassPathRunner extends BlockJUnit4ClassRunner {
 	}
 
 	private String[] getClassPath(URL booterJar) throws Exception {
-		try (JarFile jarFile = new JarFile(new File(booterJar.toURI()))) {
-			return StringUtils.delimitedListToStringArray(jarFile.getManifest()
-					.getMainAttributes().getValue(Attributes.Name.CLASS_PATH), " ");
+		Attributes attributes = getManifestMainAttributesFromUrl(booterJar);
+		return StringUtils.delimitedListToStringArray(
+				attributes.getValue(Attributes.Name.CLASS_PATH), " ");
+	}
+
+	private Attributes getManifestMainAttributesFromUrl(URL url) throws Exception {
+		try (JarFile jarFile = new JarFile(new File(url.toURI()))) {
+			return jarFile.getManifest().getMainAttributes();
 		}
 	}
 
 	private URL[] processUrls(URL[] urls, Class<?> testClass) throws Exception {
-		ClassPathEntryFilter filter = new ClassPathEntryFilter(testClass);
+		MergedAnnotations annotations = MergedAnnotations.from(testClass,
+				SearchStrategy.EXHAUSTIVE);
+		ClassPathEntryFilter filter = new ClassPathEntryFilter(
+				annotations.get(ClassPathExclusions.class));
 		List<URL> processedUrls = new ArrayList<>();
-		processedUrls.addAll(getAdditionalUrls(testClass));
+		List<URL> additionalUrls = getAdditionalUrls(
+				annotations.get(ClassPathOverrides.class));
+		processedUrls.addAll(additionalUrls);
 		for (URL url : urls) {
 			if (!filter.isExcluded(url)) {
 				processedUrls.add(url);
 			}
 		}
-		return processedUrls.toArray(new URL[processedUrls.size()]);
+		return processedUrls.toArray(new URL[0]);
 	}
 
-	private List<URL> getAdditionalUrls(Class<?> testClass) throws Exception {
-		ClassPathOverrides overrides = AnnotationUtils.findAnnotation(testClass,
-				ClassPathOverrides.class);
-		if (overrides == null) {
+	private List<URL> getAdditionalUrls(MergedAnnotation<ClassPathOverrides> annotation)
+			throws Exception {
+		if (!annotation.isPresent()) {
 			return Collections.emptyList();
 		}
-		return resolveCoordinates(overrides.value());
+		return resolveCoordinates(annotation.getStringArray(MergedAnnotation.VALUE));
 	}
 
 	private List<URL> resolveCoordinates(String[] coordinates) throws Exception {
@@ -215,13 +249,13 @@ public class ModifiedClassPathRunner extends BlockJUnit4ClassRunner {
 
 		private final AntPathMatcher matcher = new AntPathMatcher();
 
-		private ClassPathEntryFilter(Class<?> testClass) throws Exception {
+		private ClassPathEntryFilter(MergedAnnotation<ClassPathExclusions> annotation)
+				throws Exception {
 			this.exclusions = new ArrayList<>();
 			this.exclusions.add("log4j-*.jar");
-			ClassPathExclusions exclusions = AnnotationUtils.findAnnotation(testClass,
-					ClassPathExclusions.class);
-			if (exclusions != null) {
-				this.exclusions.addAll(Arrays.asList(exclusions.value()));
+			if (annotation.isPresent()) {
+				this.exclusions.addAll(
+						Arrays.asList(annotation.getStringArray(MergedAnnotation.VALUE)));
 			}
 		}
 

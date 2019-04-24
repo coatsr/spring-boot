@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,15 +24,17 @@ import org.apache.catalina.Engine;
 import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Connector;
 
+import org.springframework.boot.web.server.ConfigurableWebServerFactory;
+
 /**
- * Web Server Factory configuration for Tomcat-specific features.
+ * {@link ConfigurableWebServerFactory} for Tomcat-specific features.
  *
  * @author Brian Clozel
  * @since 2.0.0
  * @see TomcatServletWebServerFactory
  * @see TomcatReactiveWebServerFactory
  */
-public interface ConfigurableTomcatWebServerFactory {
+public interface ConfigurableTomcatWebServerFactory extends ConfigurableWebServerFactory {
 
 	/**
 	 * Set the Tomcat base directory. If not specified a temporary directory will be used.
@@ -65,6 +67,14 @@ public interface ConfigurableTomcatWebServerFactory {
 	 * @param tomcatContextCustomizers the customizers to add
 	 */
 	void addContextCustomizers(TomcatContextCustomizer... tomcatContextCustomizers);
+
+	/**
+	 * Add {@link TomcatProtocolHandlerCustomizer}s that should be added to the Tomcat
+	 * {@link Connector}.
+	 * @param tomcatProtocolHandlerCustomizers the customizers to add
+	 */
+	void addProtocolHandlerCustomizers(
+			TomcatProtocolHandlerCustomizer<?>... tomcatProtocolHandlerCustomizers);
 
 	/**
 	 * Set the character encoding to use for URL decoding. If not specified 'UTF-8' will

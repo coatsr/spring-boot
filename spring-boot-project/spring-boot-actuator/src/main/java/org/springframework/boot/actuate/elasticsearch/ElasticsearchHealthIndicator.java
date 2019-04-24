@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * {@link HealthIndicator} for an Elasticsearch cluster.
@@ -34,7 +35,9 @@ import org.springframework.util.ObjectUtils;
  * @author Binwei Yang
  * @author Andy Wilkinson
  * @since 2.0.0
+ * @deprecated the transport client support is deprecated in favor of other clients
  */
+@Deprecated
 public class ElasticsearchHealthIndicator extends AbstractHealthIndicator {
 
 	private static final String[] ALL_INDICES = { "_all" };
@@ -53,8 +56,8 @@ public class ElasticsearchHealthIndicator extends AbstractHealthIndicator {
 	 */
 	public ElasticsearchHealthIndicator(Client client, long responseTimeout,
 			List<String> indices) {
-		this(client, responseTimeout, (indices == null ? null
-				: indices.toArray(new String[indices.size()])));
+		this(client, responseTimeout,
+				(indices != null) ? StringUtils.toStringArray(indices) : null);
 	}
 
 	/**

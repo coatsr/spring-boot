@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,7 @@ import org.neo4j.driver.v1.exceptions.ServiceUnavailableException;
 
 import org.springframework.boot.test.rule.OutputCapture;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for {@link SampleNeo4jApplication}.
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 public class SampleNeo4jApplicationTests {
 
 	@Rule
-	public OutputCapture outputCapture = new OutputCapture();
+	public final OutputCapture output = new OutputCapture();
 
 	@Test
 	public void testDefaultSettings() {
@@ -44,9 +44,8 @@ public class SampleNeo4jApplicationTests {
 				return;
 			}
 		}
-		String output = this.outputCapture.toString();
-		assertTrue("Wrong output: " + output,
-				output.contains("firstName='Alice', lastName='Smith'"));
+		assertThat(this.output.toString())
+				.contains("firstName='Alice', lastName='Smith'");
 	}
 
 	private boolean neo4jServerRunning(Throwable ex) {

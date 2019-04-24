@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,7 @@ import javax.management.modelmbean.ModelMBeanOperationInfo;
 import org.springframework.boot.actuate.endpoint.OperationType;
 
 /**
- * Factory to create {@link MBeanInfo} from a {@link ExposableJmxEndpoint}.
+ * Factory to create {@link MBeanInfo} from an {@link ExposableJmxEndpoint}.
  *
  * @author Stephane Nicoll
  * @author Phillip Webb
@@ -58,7 +58,7 @@ class MBeanInfoFactory {
 	}
 
 	private String getDescription(ExposableJmxEndpoint endpoint) {
-		return "MBean operations for endpoint " + endpoint.getId();
+		return "MBean operations for endpoint " + endpoint.getEndpointId();
 	}
 
 	private ModelMBeanOperationInfo[] getMBeanOperations(ExposableJmxEndpoint endpoint) {

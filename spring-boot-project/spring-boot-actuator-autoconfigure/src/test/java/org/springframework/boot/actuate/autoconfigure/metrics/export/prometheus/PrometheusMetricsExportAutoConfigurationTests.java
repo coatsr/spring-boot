@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,15 +20,20 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.CollectorRegistry;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration;
+import org.springframework.boot.actuate.metrics.export.prometheus.PrometheusPushGatewayManager;
 import org.springframework.boot.actuate.metrics.export.prometheus.PrometheusScrapeEndpoint;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.rule.OutputCapture;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,19 +44,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class PrometheusMetricsExportAutoConfigurationTests {
 
-	private final ApplicationContextRunner runner = new ApplicationContextRunner()
+	@Rule
+	public final OutputCapture output = new OutputCapture();
+
+	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations
 					.of(PrometheusMetricsExportAutoConfiguration.class));
 
 	@Test
 	public void backsOffWithoutAClock() {
-		this.runner.run((context) -> assertThat(context)
+		this.contextRunner.run((context) -> assertThat(context)
 				.doesNotHaveBean(PrometheusMeterRegistry.class));
 	}
 
 	@Test
 	public void autoConfiguresItsConfigCollectorRegistryAndMeterRegistry() {
-		this.runner.withUserConfiguration(BaseConfiguration.class)
+		this.contextRunner.withUserConfiguration(BaseConfiguration.class)
 				.run((context) -> assertThat(context)
 						.hasSingleBean(PrometheusMeterRegistry.class)
 						.hasSingleBean(CollectorRegistry.class)
@@ -60,7 +68,7 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	@Test
 	public void autoConfigurationCanBeDisabled() {
-		this.runner
+		this.contextRunner
 				.withPropertyValues("management.metrics.export.prometheus.enabled=false")
 				.run((context) -> assertThat(context)
 						.doesNotHaveBean(PrometheusMeterRegistry.class)
@@ -70,7 +78,7 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	@Test
 	public void allowsCustomConfigToBeUsed() {
-		this.runner.withUserConfiguration(CustomConfigConfiguration.class)
+		this.contextRunner.withUserConfiguration(CustomConfigConfiguration.class)
 				.run((context) -> assertThat(context)
 						.hasSingleBean(PrometheusMeterRegistry.class)
 						.hasSingleBean(CollectorRegistry.class)
@@ -79,7 +87,7 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	@Test
 	public void allowsCustomRegistryToBeUsed() {
-		this.runner.withUserConfiguration(CustomRegistryConfiguration.class)
+		this.contextRunner.withUserConfiguration(CustomRegistryConfiguration.class)
 				.run((context) -> assertThat(context)
 						.hasSingleBean(PrometheusMeterRegistry.class)
 						.hasBean("customRegistry").hasSingleBean(CollectorRegistry.class)
@@ -88,7 +96,8 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	@Test
 	public void allowsCustomCollectorRegistryToBeUsed() {
-		this.runner.withUserConfiguration(CustomCollectorRegistryConfiguration.class)
+		this.contextRunner
+				.withUserConfiguration(CustomCollectorRegistryConfiguration.class)
 				.run((context) -> assertThat(context)
 						.hasSingleBean(PrometheusMeterRegistry.class)
 						.hasBean("customCollectorRegistry")
@@ -98,19 +107,33 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	@Test
 	public void addsScrapeEndpointToManagementContext() {
-		this.runner
+		this.contextRunner
 				.withConfiguration(
 						AutoConfigurations.of(ManagementContextAutoConfiguration.class))
 				.withUserConfiguration(BaseConfiguration.class)
+				.withPropertyValues(
+						"management.endpoints.web.exposure.include=prometheus")
 				.run((context) -> assertThat(context)
 						.hasSingleBean(PrometheusScrapeEndpoint.class));
 	}
 
 	@Test
-	public void scrapeEndpointCanBeDisabled() {
-		this.runner
+	public void scrapeEndpointNotAddedToManagementContextWhenNotExposed() {
+		this.contextRunner
 				.withConfiguration(
 						AutoConfigurations.of(ManagementContextAutoConfiguration.class))
+				.withUserConfiguration(BaseConfiguration.class)
+				.run((context) -> assertThat(context)
+						.doesNotHaveBean(PrometheusScrapeEndpoint.class));
+	}
+
+	@Test
+	public void scrapeEndpointCanBeDisabled() {
+		this.contextRunner
+				.withConfiguration(
+						AutoConfigurations.of(ManagementContextAutoConfiguration.class))
+				.withPropertyValues(
+						"management.endpoints.web.exposure.include=prometheus")
 				.withPropertyValues("management.endpoint.prometheus.enabled=false")
 				.withUserConfiguration(BaseConfiguration.class)
 				.run((context) -> assertThat(context)
@@ -119,7 +142,7 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	@Test
 	public void allowsCustomScrapeEndpointToBeUsed() {
-		this.runner
+		this.contextRunner
 				.withConfiguration(
 						AutoConfigurations.of(ManagementContextAutoConfiguration.class))
 				.withUserConfiguration(CustomEndpointConfiguration.class)
@@ -127,7 +150,59 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 						.hasSingleBean(PrometheusScrapeEndpoint.class));
 	}
 
-	@Configuration
+	@Test
+	public void withPushGatewayEnabled() {
+		this.contextRunner
+				.withConfiguration(
+						AutoConfigurations.of(ManagementContextAutoConfiguration.class))
+				.withPropertyValues(
+						"management.metrics.export.prometheus.pushgateway.enabled=true")
+				.withUserConfiguration(BaseConfiguration.class).run((context) -> {
+					assertThat(this.output.toString())
+							.doesNotContain("Invalid PushGateway base url");
+					hasGatewayURL(context, "http://localhost:9091/metrics/job/");
+				});
+	}
+
+	@Test
+	@Deprecated
+	public void withCustomLegacyPushGatewayURL() {
+		this.contextRunner
+				.withConfiguration(
+						AutoConfigurations.of(ManagementContextAutoConfiguration.class))
+				.withPropertyValues(
+						"management.metrics.export.prometheus.pushgateway.enabled=true",
+						"management.metrics.export.prometheus.pushgateway.base-url=localhost:9090")
+				.withUserConfiguration(BaseConfiguration.class).run((context) -> {
+					assertThat(this.output.toString())
+							.contains("Invalid PushGateway base url")
+							.contains("localhost:9090");
+					hasGatewayURL(context, "http://localhost:9090/metrics/job/");
+				});
+	}
+
+	@Test
+	public void withCustomPushGatewayURL() {
+		this.contextRunner
+				.withConfiguration(
+						AutoConfigurations.of(ManagementContextAutoConfiguration.class))
+				.withPropertyValues(
+						"management.metrics.export.prometheus.pushgateway.enabled=true",
+						"management.metrics.export.prometheus.pushgateway.base-url=https://example.com:8080")
+				.withUserConfiguration(BaseConfiguration.class)
+				.run((context) -> hasGatewayURL(context,
+						"https://example.com:8080/metrics/job/"));
+	}
+
+	private void hasGatewayURL(AssertableApplicationContext context, String url) {
+		assertThat(context).hasSingleBean(PrometheusPushGatewayManager.class);
+		PrometheusPushGatewayManager gatewayManager = context
+				.getBean(PrometheusPushGatewayManager.class);
+		Object pushGateway = ReflectionTestUtils.getField(gatewayManager, "pushGateway");
+		assertThat(pushGateway).hasFieldOrPropertyWithValue("gatewayBaseURL", url);
+	}
+
+	@Configuration(proxyBeanMethods = false)
 	static class BaseConfiguration {
 
 		@Bean
@@ -137,25 +212,18 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class CustomConfigConfiguration {
 
 		@Bean
 		public PrometheusConfig customConfig() {
-			return new PrometheusConfig() {
-
-				@Override
-				public String get(String k) {
-					return null;
-				}
-
-			};
+			return (key) -> null;
 		}
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class CustomRegistryConfiguration {
 
@@ -167,7 +235,7 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class CustomCollectorRegistryConfiguration {
 
@@ -178,7 +246,7 @@ public class PrometheusMetricsExportAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class CustomEndpointConfiguration {
 

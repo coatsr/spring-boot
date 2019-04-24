@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,8 @@ import java.security.Principal;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.boot.actuate.endpoint.invoke.InvocationContext;
+import org.springframework.boot.actuate.endpoint.InvocationContext;
+import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.boot.actuate.endpoint.invoke.MissingParametersException;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvoker;
 import org.springframework.boot.actuate.endpoint.invoke.OperationParameter;
@@ -89,7 +90,10 @@ public class ReflectiveOperationInvoker implements OperationInvoker {
 			return false;
 		}
 		if (Principal.class.equals(parameter.getType())) {
-			return context.getPrincipal() == null;
+			return context.getSecurityContext().getPrincipal() == null;
+		}
+		if (SecurityContext.class.equals(parameter.getType())) {
+			return false;
 		}
 		return context.getArguments().get(parameter.getName()) == null;
 	}
@@ -102,7 +106,10 @@ public class ReflectiveOperationInvoker implements OperationInvoker {
 	private Object resolveArgument(OperationParameter parameter,
 			InvocationContext context) {
 		if (Principal.class.equals(parameter.getType())) {
-			return context.getPrincipal();
+			return context.getSecurityContext().getPrincipal();
+		}
+		if (SecurityContext.class.equals(parameter.getType())) {
+			return context.getSecurityContext();
 		}
 		Object value = context.getArguments().get(parameter.getName());
 		return this.parameterValueMapper.mapParameterValue(parameter, value);

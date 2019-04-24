@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,9 @@ import java.util.Properties;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import org.springframework.boot.gradle.junit.GradleMultiDslSuite;
 import org.springframework.boot.gradle.testkit.GradleBuild;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,16 +34,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for the generating build info documentation.
  *
  * @author Andy Wilkinson
+ * @author Jean-Baptiste Nizet
  */
+@RunWith(GradleMultiDslSuite.class)
 public class IntegratingWithActuatorDocumentationTests {
 
 	@Rule
-	public GradleBuild gradleBuild = new GradleBuild();
+	public GradleBuild gradleBuild;
 
 	@Test
 	public void basicBuildInfo() throws IOException {
-		this.gradleBuild.script(
-				"src/main/gradle/integrating-with-actuator/build-info-basic.gradle")
+		this.gradleBuild
+				.script("src/main/gradle/integrating-with-actuator/build-info-basic")
 				.build("bootBuildInfo");
 		assertThat(new File(this.gradleBuild.getProjectDir(),
 				"build/resources/main/META-INF/build-info.properties")).isFile();
@@ -50,7 +54,7 @@ public class IntegratingWithActuatorDocumentationTests {
 	@Test
 	public void buildInfoCustomValues() throws IOException {
 		this.gradleBuild.script(
-				"src/main/gradle/integrating-with-actuator/build-info-custom-values.gradle")
+				"src/main/gradle/integrating-with-actuator/build-info-custom-values")
 				.build("bootBuildInfo");
 		File file = new File(this.gradleBuild.getProjectDir(),
 				"build/resources/main/META-INF/build-info.properties");
@@ -64,8 +68,8 @@ public class IntegratingWithActuatorDocumentationTests {
 
 	@Test
 	public void buildInfoAdditional() throws IOException {
-		this.gradleBuild.script(
-				"src/main/gradle/integrating-with-actuator/build-info-additional.gradle")
+		this.gradleBuild
+				.script("src/main/gradle/integrating-with-actuator/build-info-additional")
 				.build("bootBuildInfo");
 		File file = new File(this.gradleBuild.getProjectDir(),
 				"build/resources/main/META-INF/build-info.properties");

@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,6 +44,8 @@ public class ErrorProperties {
 	 */
 	private IncludeStacktrace includeStacktrace = IncludeStacktrace.NEVER;
 
+	private final Whitelabel whitelabel = new Whitelabel();
+
 	public String getPath() {
 		return this.path;
 	}
@@ -68,6 +70,10 @@ public class ErrorProperties {
 		this.includeStacktrace = includeStacktrace;
 	}
 
+	public Whitelabel getWhitelabel() {
+		return this.whitelabel;
+	}
+
 	/**
 	 * Include Stacktrace attribute options.
 	 */
@@ -87,6 +93,24 @@ public class ErrorProperties {
 		 * Add stacktrace information when the "trace" request parameter is "true".
 		 */
 		ON_TRACE_PARAM
+
+	}
+
+	public static class Whitelabel {
+
+		/**
+		 * Whether to enable the default error page displayed in browsers in case of a
+		 * server error.
+		 */
+		private boolean enabled = true;
+
+		public boolean isEnabled() {
+			return this.enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
 
 	}
 

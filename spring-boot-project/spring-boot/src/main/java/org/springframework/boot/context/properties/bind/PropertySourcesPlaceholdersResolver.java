@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,10 +48,10 @@ public class PropertySourcesPlaceholdersResolver implements PlaceholdersResolver
 	public PropertySourcesPlaceholdersResolver(Iterable<PropertySource<?>> sources,
 			PropertyPlaceholderHelper helper) {
 		this.sources = sources;
-		this.helper = (helper != null ? helper
+		this.helper = (helper != null) ? helper
 				: new PropertyPlaceholderHelper(SystemPropertyUtils.PLACEHOLDER_PREFIX,
 						SystemPropertyUtils.PLACEHOLDER_SUFFIX,
-						SystemPropertyUtils.VALUE_SEPARATOR, false));
+						SystemPropertyUtils.VALUE_SEPARATOR, true);
 	}
 
 	@Override

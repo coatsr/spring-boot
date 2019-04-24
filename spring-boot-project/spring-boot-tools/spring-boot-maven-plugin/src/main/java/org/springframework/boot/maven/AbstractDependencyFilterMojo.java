@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.artifact.filter.collection.ArtifactFilterException;
-import org.apache.maven.shared.artifact.filter.collection.ArtifactIdFilter;
 import org.apache.maven.shared.artifact.filter.collection.ArtifactsFilter;
 import org.apache.maven.shared.artifact.filter.collection.FilterArtifacts;
 
@@ -64,13 +63,6 @@ public abstract class AbstractDependencyFilterMojo extends AbstractMojo {
 	@Parameter(property = "spring-boot.excludeGroupIds", defaultValue = "")
 	private String excludeGroupIds;
 
-	/**
-	 * Comma separated list of artifact names to exclude (exact match).
-	 * @since 1.1
-	 */
-	@Parameter(property = "spring-boot.excludeArtifactIds", defaultValue = "")
-	private String excludeArtifactIds;
-
 	protected void setExcludes(List<Exclude> excludes) {
 		this.excludes = excludes;
 	}
@@ -81,10 +73,6 @@ public abstract class AbstractDependencyFilterMojo extends AbstractMojo {
 
 	protected void setExcludeGroupIds(String excludeGroupIds) {
 		this.excludeGroupIds = excludeGroupIds;
-	}
-
-	protected void setExcludeArtifactIds(String excludeArtifactIds) {
-		this.excludeArtifactIds = excludeArtifactIds;
 	}
 
 	protected Set<Artifact> filterDependencies(Set<Artifact> dependencies,
@@ -109,8 +97,6 @@ public abstract class AbstractDependencyFilterMojo extends AbstractMojo {
 		for (ArtifactsFilter additionalFilter : additionalFilters) {
 			filters.addFilter(additionalFilter);
 		}
-		filters.addFilter(
-				new ArtifactIdFilter("", cleanFilterConfig(this.excludeArtifactIds)));
 		filters.addFilter(
 				new MatchingGroupIdFilter(cleanFilterConfig(this.excludeGroupIds)));
 		if (this.includes != null && !this.includes.isEmpty()) {

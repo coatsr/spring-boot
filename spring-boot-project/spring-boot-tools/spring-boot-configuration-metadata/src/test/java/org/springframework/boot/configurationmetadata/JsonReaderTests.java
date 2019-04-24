@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,11 +21,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import org.hamcrest.CoreMatchers;
 import org.json.JSONException;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 /**
  * Tests for {@link JsonReader}.
@@ -47,8 +47,8 @@ public class JsonReaderTests extends AbstractConfigurationMetadataTests {
 
 	@Test
 	public void invalidMetadata() throws IOException {
-		this.thrown.expectCause(CoreMatchers.instanceOf(JSONException.class));
-		readFor("invalid");
+		assertThatIllegalStateException().isThrownBy(() -> readFor("invalid"))
+				.withCauseInstanceOf(JSONException.class);
 	}
 
 	@Test
@@ -121,7 +121,7 @@ public class JsonReaderTests extends AbstractConfigurationMetadataTests {
 		assertThat(valueHint.getDescription()).isEqualTo("One.");
 		ValueHint valueHint2 = hint.getValueHints().get(1);
 		assertThat(valueHint2.getValue()).isEqualTo("two");
-		assertThat(valueHint2.getDescription()).isEqualTo(null);
+		assertThat(valueHint2.getDescription()).isNull();
 
 		assertThat(hint.getValueProviders()).hasSize(2);
 		ValueProvider valueProvider = hint.getValueProviders().get(0);
@@ -175,7 +175,7 @@ public class JsonReaderTests extends AbstractConfigurationMetadataTests {
 		assertProperty(item3, "spring.server.name", "spring.server.name", String.class,
 				null);
 		assertThat(item3.isDeprecated()).isFalse();
-		assertThat(item3.getDeprecation()).isEqualTo(null);
+		assertThat(item3.getDeprecation()).isNull();
 
 		ConfigurationMetadataItem item4 = items.get(3);
 		assertProperty(item4, "spring.server-name", "spring.server-name", String.class,
@@ -197,6 +197,25 @@ public class JsonReaderTests extends AbstractConfigurationMetadataTests {
 				.isEqualTo("spring.server.name");
 		assertThat(item5.getDeprecation().getLevel())
 				.isEqualTo(Deprecation.Level.WARNING);
+	}
+
+	@Test
+	public void multiGroupsMetadata() throws IOException {
+		RawConfigurationMetadata rawMetadata = readFor("multi-groups");
+		List<ConfigurationMetadataItem> items = rawMetadata.getItems();
+		assertThat(items).hasSize(3);
+
+		ConfigurationMetadataItem item = items.get(0);
+		assertThat(item.getName()).isEqualTo("enabled");
+		assertThat(item.getSourceType()).isEqualTo("com.example.Retry");
+
+		ConfigurationMetadataItem item2 = items.get(1);
+		assertThat(item2.getName()).isEqualTo("enabled");
+		assertThat(item2.getSourceType()).isEqualTo("com.example.Retry");
+
+		ConfigurationMetadataItem item3 = items.get(2);
+		assertThat(item3.getName()).isEqualTo("enabled");
+		assertThat(item3.getSourceType()).isEqualTo("com.example.Retry");
 	}
 
 	RawConfigurationMetadata readFor(String path) throws IOException {

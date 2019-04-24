@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -69,10 +69,8 @@ class FileSessionPersistence implements SessionPersistenceManager {
 	private void save(Map<String, PersistentSession> sessionData,
 			ObjectOutputStream stream) throws IOException {
 		Map<String, Serializable> session = new LinkedHashMap<>();
-		for (Map.Entry<String, PersistentSession> entry : sessionData.entrySet()) {
-			session.put(entry.getKey(),
-					new SerializablePersistentSession(entry.getValue()));
-		}
+		sessionData.forEach((key, value) -> session.put(key,
+				new SerializablePersistentSession(value)));
 		stream.writeObject(session);
 	}
 
@@ -104,13 +102,12 @@ class FileSessionPersistence implements SessionPersistenceManager {
 		Map<String, SerializablePersistentSession> session = readSession(stream);
 		long time = System.currentTimeMillis();
 		Map<String, PersistentSession> result = new LinkedHashMap<>();
-		for (Map.Entry<String, SerializablePersistentSession> entry : session
-				.entrySet()) {
-			PersistentSession entrySession = entry.getValue().getPersistentSession();
+		session.forEach((key, value) -> {
+			PersistentSession entrySession = value.getPersistentSession();
 			if (entrySession.getExpiration().getTime() > time) {
-				result.put(entry.getKey(), entrySession);
+				result.put(key, entrySession);
 			}
-		}
+		});
 		return result;
 	}
 

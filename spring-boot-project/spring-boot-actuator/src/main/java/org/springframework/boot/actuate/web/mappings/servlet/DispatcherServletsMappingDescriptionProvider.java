@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,13 +19,18 @@ package org.springframework.boot.actuate.web.mappings.servlet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.servlet.Servlet;
+
+import org.springframework.boot.actuate.web.mappings.HandlerMethodDescription;
 import org.springframework.boot.actuate.web.mappings.MappingDescriptionProvider;
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.rest.webmvc.support.DelegatingHandlerMapping;
 import org.springframework.util.ClassUtils;
@@ -43,6 +48,7 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMappi
  * DispatcherServlets}.
  *
  * @author Andy Wilkinson
+ * @author Stephane Nicoll
  * @since 2.0.0
  */
 public class DispatcherServletsMappingDescriptionProvider
@@ -80,11 +86,31 @@ public class DispatcherServletsMappingDescriptionProvider
 	private Map<String, List<DispatcherServletMappingDescription>> describeMappings(
 			WebApplicationContext context) {
 		Map<String, List<DispatcherServletMappingDescription>> mappings = new HashMap<>();
-		context.getBeansOfType(DispatcherServlet.class)
-				.forEach((name, dispatcherServlet) -> mappings.put(name,
-						describeMappings(new DispatcherServletHandlerMappings(name,
-								dispatcherServlet, context))));
+		determineDispatcherServlets(context).forEach((name, dispatcherServlet) -> mappings
+				.put(name, describeMappings(new DispatcherServletHandlerMappings(name,
+						dispatcherServlet, context))));
 		return mappings;
+	}
+
+	private Map<String, DispatcherServlet> determineDispatcherServlets(
+			WebApplicationContext context) {
+		Map<String, DispatcherServlet> dispatcherServlets = new LinkedHashMap<>();
+		context.getBeansOfType(ServletRegistrationBean.class).values()
+				.forEach((registration) -> {
+					Servlet servlet = registration.getServlet();
+					if (servlet instanceof DispatcherServlet
+							&& !dispatcherServlets.containsValue(servlet)) {
+						dispatcherServlets.put(registration.getServletName(),
+								(DispatcherServlet) servlet);
+					}
+				});
+		context.getBeansOfType(DispatcherServlet.class)
+				.forEach((name, dispatcherServlet) -> {
+					if (!dispatcherServlets.containsValue(dispatcherServlet)) {
+						dispatcherServlets.put(name, dispatcherServlet);
+					}
+				});
+		return dispatcherServlets;
 	}
 
 	private List<DispatcherServletMappingDescription> describeMappings(
@@ -139,8 +165,13 @@ public class DispatcherServletsMappingDescriptionProvider
 
 		private DispatcherServletMappingDescription describe(
 				Entry<RequestMappingInfo, HandlerMethod> mapping) {
+			DispatcherServletMappingDetails mappingDetails = new DispatcherServletMappingDetails();
+			mappingDetails
+					.setHandlerMethod(new HandlerMethodDescription(mapping.getValue()));
+			mappingDetails.setRequestMappingConditions(
+					new RequestMappingConditionsDescription(mapping.getKey()));
 			return new DispatcherServletMappingDescription(mapping.getKey().toString(),
-					mapping.getValue().toString());
+					mapping.getValue().toString(), mappingDetails);
 		}
 
 	}
@@ -162,8 +193,8 @@ public class DispatcherServletsMappingDescriptionProvider
 
 		private DispatcherServletMappingDescription describe(
 				Entry<String, Object> mapping) {
-			return new DispatcherServletMappingDescription(mapping.getKey().toString(),
-					mapping.getValue().toString());
+			return new DispatcherServletMappingDescription(mapping.getKey(),
+					mapping.getValue().toString(), null);
 		}
 
 	}

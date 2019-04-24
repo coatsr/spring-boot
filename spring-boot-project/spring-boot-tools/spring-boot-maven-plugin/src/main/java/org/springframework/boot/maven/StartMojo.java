@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,7 @@ import java.net.ConnectException;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import javax.management.MBeanServerConnection;
@@ -49,7 +50,9 @@ import org.springframework.boot.loader.tools.RunProcess;
  * @since 1.3.0
  * @see StopMojo
  */
-@Mojo(name = "start", requiresProject = true, defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST, requiresDependencyResolution = ResolutionScope.TEST)
+@Mojo(name = "start", requiresProject = true,
+		defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST,
+		requiresDependencyResolution = ResolutionScope.TEST)
 public class StartMojo extends AbstractRunMojo {
 
 	private static final String ENABLE_MBEAN_PROPERTY = "--spring.application.admin.enabled=true";
@@ -88,9 +91,10 @@ public class StartMojo extends AbstractRunMojo {
 	private final Object lock = new Object();
 
 	@Override
-	protected void runWithForkedJvm(File workingDirectory, List<String> args)
+	protected void runWithForkedJvm(File workingDirectory, List<String> args,
+			Map<String, String> environmentVariables)
 			throws MojoExecutionException, MojoFailureException {
-		RunProcess runProcess = runProcess(workingDirectory, args);
+		RunProcess runProcess = runProcess(workingDirectory, args, environmentVariables);
 		try {
 			waitForSpringApplication();
 		}
@@ -100,12 +104,12 @@ public class StartMojo extends AbstractRunMojo {
 		}
 	}
 
-	private RunProcess runProcess(File workingDirectory, List<String> args)
-			throws MojoExecutionException {
+	private RunProcess runProcess(File workingDirectory, List<String> args,
+			Map<String, String> environmentVariables) throws MojoExecutionException {
 		try {
 			RunProcess runProcess = new RunProcess(workingDirectory,
 					new JavaExecutable().toString());
-			runProcess.run(false, args.toArray(new String[args.size()]));
+			runProcess.run(false, args, environmentVariables);
 			return runProcess;
 		}
 		catch (Exception ex) {
@@ -133,6 +137,7 @@ public class StartMojo extends AbstractRunMojo {
 			remoteJmxArguments.add("-Dcom.sun.management.jmxremote.port=" + this.jmxPort);
 			remoteJmxArguments.add("-Dcom.sun.management.jmxremote.authenticate=false");
 			remoteJmxArguments.add("-Dcom.sun.management.jmxremote.ssl=false");
+			remoteJmxArguments.add("-Djava.rmi.server.hostname=127.0.0.1");
 			jvmArguments.getArgs().addAll(remoteJmxArguments);
 		}
 		return jvmArguments;

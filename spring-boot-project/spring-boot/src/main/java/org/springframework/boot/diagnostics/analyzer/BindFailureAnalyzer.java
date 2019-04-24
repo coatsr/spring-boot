@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -70,11 +70,18 @@ class BindFailureAnalyzer extends AbstractFailureAnalyzer<BindException> {
 	}
 
 	private String getMessage(BindException cause) {
-		if (cause.getCause() != null
-				&& StringUtils.hasText(cause.getCause().getMessage())) {
-			return cause.getCause().getMessage();
+		ConversionFailedException conversionFailure = findCause(cause,
+				ConversionFailedException.class);
+		if (conversionFailure != null) {
+			return "failed to convert " + conversionFailure.getSourceType() + " to "
+					+ conversionFailure.getTargetType();
 		}
-		return cause.getMessage();
+		Throwable failure = cause;
+		while (failure.getCause() != null) {
+			failure = failure.getCause();
+		}
+		return (StringUtils.hasText(failure.getMessage()) ? failure.getMessage()
+				: cause.getMessage());
 	}
 
 	private FailureAnalysis getFailureAnalysis(Object description, BindException cause) {

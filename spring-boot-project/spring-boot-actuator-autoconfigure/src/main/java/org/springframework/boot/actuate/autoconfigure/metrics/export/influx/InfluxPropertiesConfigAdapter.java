@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,18 +61,36 @@ class InfluxPropertiesConfigAdapter extends
 	}
 
 	@Override
+	public Integer retentionReplicationFactor() {
+		return get(InfluxProperties::getRetentionReplicationFactor,
+				InfluxConfig.super::retentionReplicationFactor);
+	}
+
+	@Override
+	public String retentionDuration() {
+		return get(InfluxProperties::getRetentionDuration,
+				InfluxConfig.super::retentionDuration);
+	}
+
+	@Override
+	public String retentionShardDuration() {
+		return get(InfluxProperties::getRetentionShardDuration,
+				InfluxConfig.super::retentionShardDuration);
+	}
+
+	@Override
 	public String uri() {
 		return get(InfluxProperties::getUri, InfluxConfig.super::uri);
 	}
 
 	@Override
 	public boolean compressed() {
-		return get(InfluxProperties::getCompressed, InfluxConfig.super::compressed);
+		return get(InfluxProperties::isCompressed, InfluxConfig.super::compressed);
 	}
 
 	@Override
 	public boolean autoCreateDb() {
-		return get(InfluxProperties::getAutoCreateDb, InfluxConfig.super::autoCreateDb);
+		return get(InfluxProperties::isAutoCreateDb, InfluxConfig.super::autoCreateDb);
 	}
 
 }

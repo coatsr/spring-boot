@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,7 +33,7 @@ import org.springframework.util.StringUtils;
  * Base class for Servlet 3.0+ {@link javax.servlet.Registration.Dynamic dynamic} based
  * registration beans.
  *
- * @param <D> The dynamic registration result
+ * @param <D> the dynamic registration result
  * @author Phillip Webb
  * @since 2.0.0
  */
@@ -132,7 +132,7 @@ public abstract class DynamicRegistrationBean<D extends Registration.Dynamic>
 	 * @return the deduced name
 	 */
 	protected final String getOrDeduceName(Object value) {
-		return (this.name != null ? this.name : Conventions.getVariableName(value));
+		return (this.name != null) ? this.name : Conventions.getVariableName(value);
 	}
 
 }

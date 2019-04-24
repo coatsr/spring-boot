@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.boot.env;
+
+import java.util.List;
 
 import org.junit.Test;
 
@@ -41,15 +43,17 @@ public class PropertiesPropertySourceLoaderTests {
 
 	@Test
 	public void loadProperties() throws Exception {
-		PropertySource<?> source = this.loader.load("test.properties",
-				new ClassPathResource("test-properties.properties", getClass()), null);
+		List<PropertySource<?>> loaded = this.loader.load("test.properties",
+				new ClassPathResource("test-properties.properties", getClass()));
+		PropertySource<?> source = loaded.get(0);
 		assertThat(source.getProperty("test")).isEqualTo("properties");
 	}
 
 	@Test
 	public void loadXml() throws Exception {
-		PropertySource<?> source = this.loader.load("test.xml",
-				new ClassPathResource("test-xml.xml", getClass()), null);
+		List<PropertySource<?>> loaded = this.loader.load("test.xml",
+				new ClassPathResource("test-xml.xml", getClass()));
+		PropertySource<?> source = loaded.get(0);
 		assertThat(source.getProperty("test")).isEqualTo("xml");
 	}
 

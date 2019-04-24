@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -50,15 +50,17 @@ public class MockServletWebServerFactory extends AbstractServletWebServerFactory
 	}
 
 	public ServletContext getServletContext() {
-		return getWebServer() == null ? null : getWebServer().getServletContext();
+		return (getWebServer() != null) ? getWebServer().getServletContext() : null;
 	}
 
 	public RegisteredServlet getRegisteredServlet(int index) {
-		return getWebServer() == null ? null : getWebServer().getRegisteredServlet(index);
+		return (getWebServer() != null) ? getWebServer().getRegisteredServlet(index)
+				: null;
 	}
 
 	public RegisteredFilter getRegisteredFilter(int index) {
-		return getWebServer() == null ? null : getWebServer().getRegisteredFilters(index);
+		return (getWebServer() != null) ? getWebServer().getRegisteredFilters(index)
+				: null;
 	}
 
 	public static class MockServletWebServer

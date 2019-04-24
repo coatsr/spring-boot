@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,21 +25,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * {@link ConfigurationProperties} for configuring Influx metrics export.
  *
  * @author Jon Schneider
+ * @author Stephane Nicoll
  * @since 2.0.0
  */
 @ConfigurationProperties(prefix = "management.metrics.export.influx")
 public class InfluxProperties extends StepRegistryProperties {
 
 	/**
-	 * Tag that will be mapped to "host" when shipping metrics to Influx. Can be omitted
-	 * if host should be omitted on publishing.
+	 * Tag that will be mapped to "host" when shipping metrics to Influx.
 	 */
-	private String db;
+	private String db = "mydb";
 
 	/**
 	 * Write consistency for each point.
 	 */
-	private InfluxConsistency consistency;
+	private InfluxConsistency consistency = InfluxConsistency.ONE;
 
 	/**
 	 * Login user of the Influx server.
@@ -58,20 +58,39 @@ public class InfluxProperties extends StepRegistryProperties {
 	private String retentionPolicy;
 
 	/**
-	 * URI of the Influx server.
+	 * Time period for which Influx should retain data in the current database. For
+	 * instance 7d, check the influx documentation for more details on the duration
+	 * format.
 	 */
-	private String uri;
+	private String retentionDuration;
 
 	/**
-	 * Enable GZIP compression of metrics batches published to Influx.
+	 * How many copies of the data are stored in the cluster. Must be 1 for a single node
+	 * instance.
 	 */
-	private Boolean compressed;
+	private Integer retentionReplicationFactor;
+
+	/**
+	 * Time range covered by a shard group. For instance 2w, check the influx
+	 * documentation for more details on the duration format.
+	 */
+	private String retentionShardDuration;
+
+	/**
+	 * URI of the Influx server.
+	 */
+	private String uri = "http://localhost:8086";
+
+	/**
+	 * Whether to enable GZIP compression of metrics batches published to Influx.
+	 */
+	private boolean compressed = true;
 
 	/**
 	 * Whether to create the Influx database if it does not exist before attempting to
 	 * publish metrics to it.
 	 */
-	private Boolean autoCreateDb;
+	private boolean autoCreateDb = true;
 
 	public String getDb() {
 		return this.db;
@@ -113,6 +132,30 @@ public class InfluxProperties extends StepRegistryProperties {
 		this.retentionPolicy = retentionPolicy;
 	}
 
+	public String getRetentionDuration() {
+		return this.retentionDuration;
+	}
+
+	public void setRetentionDuration(String retentionDuration) {
+		this.retentionDuration = retentionDuration;
+	}
+
+	public Integer getRetentionReplicationFactor() {
+		return this.retentionReplicationFactor;
+	}
+
+	public void setRetentionReplicationFactor(Integer retentionReplicationFactor) {
+		this.retentionReplicationFactor = retentionReplicationFactor;
+	}
+
+	public String getRetentionShardDuration() {
+		return this.retentionShardDuration;
+	}
+
+	public void setRetentionShardDuration(String retentionShardDuration) {
+		this.retentionShardDuration = retentionShardDuration;
+	}
+
 	public String getUri() {
 		return this.uri;
 	}
@@ -121,19 +164,20 @@ public class InfluxProperties extends StepRegistryProperties {
 		this.uri = uri;
 	}
 
-	public Boolean getCompressed() {
+	public boolean isCompressed() {
 		return this.compressed;
 	}
 
-	public void setCompressed(Boolean compressed) {
+	public void setCompressed(boolean compressed) {
 		this.compressed = compressed;
 	}
 
-	public Boolean getAutoCreateDb() {
+	public boolean isAutoCreateDb() {
 		return this.autoCreateDb;
 	}
 
-	public void setAutoCreateDb(Boolean autoCreateDb) {
+	public void setAutoCreateDb(boolean autoCreateDb) {
 		this.autoCreateDb = autoCreateDb;
 	}
+
 }

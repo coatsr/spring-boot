@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,6 +34,7 @@ import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.boot.context.properties.bind.PlaceholdersResolver;
 import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
+import org.springframework.boot.origin.Origin;
 import org.springframework.boot.origin.OriginLookup;
 import org.springframework.core.env.CompositePropertySource;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -152,9 +153,14 @@ public class EnvironmentEndpoint {
 	private PropertyValueDescriptor describeValueOf(String name, PropertySource<?> source,
 			PlaceholdersResolver resolver) {
 		Object resolved = resolver.resolvePlaceholders(source.getProperty(name));
-		String origin = (source instanceof OriginLookup)
-				? ((OriginLookup<Object>) source).getOrigin(name).toString() : null;
+		String origin = ((source instanceof OriginLookup)
+				? getOrigin((OriginLookup<Object>) source, name) : null);
 		return new PropertyValueDescriptor(sanitize(name, resolved), origin);
+	}
+
+	private String getOrigin(OriginLookup<Object> lookup, String name) {
+		Origin origin = lookup.getOrigin(name);
+		return (origin != null) ? origin.toString() : null;
 	}
 
 	private PlaceholdersResolver getResolver() {

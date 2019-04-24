@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,9 @@ package org.springframework.boot.context.properties.bind;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
+import org.springframework.boot.context.properties.bind.Binder.Context;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.core.ResolvableType;
 
@@ -31,7 +33,7 @@ import org.springframework.core.ResolvableType;
  */
 class ArrayBinder extends IndexedElementsBinder<Object> {
 
-	ArrayBinder(BindContext context) {
+	ArrayBinder(Context context) {
 		super(context);
 	}
 
@@ -54,7 +56,7 @@ class ArrayBinder extends IndexedElementsBinder<Object> {
 	}
 
 	@Override
-	protected Object merge(Object existing, Object additional) {
+	protected Object merge(Supplier<Object> existing, Object additional) {
 		return additional;
 	}
 

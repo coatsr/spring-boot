@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,8 +45,8 @@ class ProjectGenerator {
 	public void generateProject(ProjectGenerationRequest request, boolean force)
 			throws IOException {
 		ProjectGenerationResponse response = this.initializrService.generate(request);
-		String fileName = (request.getOutput() != null ? request.getOutput()
-				: response.getFileName());
+		String fileName = (request.getOutput() != null) ? request.getOutput()
+				: response.getFileName();
 		if (shouldExtract(request, response)) {
 			if (isZipArchive(response)) {
 				extractProject(response, request.getOutput(), force);
@@ -100,8 +100,8 @@ class ProjectGenerator {
 
 	private void extractProject(ProjectGenerationResponse entity, String output,
 			boolean overwrite) throws IOException {
-		File outputFolder = (output != null ? new File(output)
-				: new File(System.getProperty("user.dir")));
+		File outputFolder = (output != null) ? new File(output)
+				: new File(System.getProperty("user.dir"));
 		if (!outputFolder.exists()) {
 			outputFolder.mkdirs();
 		}
@@ -117,8 +117,17 @@ class ProjectGenerator {
 	private void extractFromStream(ZipInputStream zipStream, boolean overwrite,
 			File outputFolder) throws IOException {
 		ZipEntry entry = zipStream.getNextEntry();
+		String canonicalOutputPath = outputFolder.getCanonicalPath() + File.separator;
 		while (entry != null) {
 			File file = new File(outputFolder, entry.getName());
+			String canonicalEntryPath = file.getCanonicalPath();
+			if (!canonicalEntryPath.startsWith(canonicalOutputPath)) {
+				throw new ReportableException("Entry '" + entry.getName()
+						+ "' would be written to '" + canonicalEntryPath
+						+ "'. This is outside the output location of '"
+						+ canonicalOutputPath
+						+ "'. Verify your target server configuration.");
+			}
 			if (file.exists() && !overwrite) {
 				throw new ReportableException((file.isDirectory() ? "Directory" : "File")
 						+ " '" + file.getName()

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.boot.actuate.autoconfigure.cloudfoundry.servlet;
+
+import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -26,6 +28,7 @@ import org.springframework.boot.actuate.autoconfigure.cloudfoundry.CloudFoundryA
 import org.springframework.boot.actuate.autoconfigure.cloudfoundry.CloudFoundryAuthorizationException.Reason;
 import org.springframework.boot.actuate.autoconfigure.cloudfoundry.SecurityResponse;
 import org.springframework.boot.actuate.autoconfigure.cloudfoundry.Token;
+import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
@@ -47,7 +50,7 @@ class CloudFoundrySecurityInterceptor {
 
 	private final String applicationId;
 
-	private static SecurityResponse SUCCESS = SecurityResponse.success();
+	private static final SecurityResponse SUCCESS = SecurityResponse.success();
 
 	CloudFoundrySecurityInterceptor(TokenValidator tokenValidator,
 			CloudFoundrySecurityService cloudFoundrySecurityService,
@@ -57,7 +60,7 @@ class CloudFoundrySecurityInterceptor {
 		this.applicationId = applicationId;
 	}
 
-	SecurityResponse preHandle(HttpServletRequest request, String endpointId) {
+	SecurityResponse preHandle(HttpServletRequest request, EndpointId endpointId) {
 		if (CorsUtils.isPreFlightRequest(request)) {
 			return SecurityResponse.success();
 		}
@@ -88,12 +91,14 @@ class CloudFoundrySecurityInterceptor {
 		return SecurityResponse.success();
 	}
 
-	private void check(HttpServletRequest request, String endpointId) throws Exception {
+	private void check(HttpServletRequest request, EndpointId endpointId)
+			throws Exception {
 		Token token = getToken(request);
 		this.tokenValidator.validate(token);
 		AccessLevel accessLevel = this.cloudFoundrySecurityService
 				.getAccessLevel(token.toString(), this.applicationId);
-		if (!accessLevel.isAccessAllowed(endpointId)) {
+		if (!accessLevel.isAccessAllowed(
+				(endpointId != null) ? endpointId.toLowerCaseString() : "")) {
 			throw new CloudFoundryAuthorizationException(Reason.ACCESS_DENIED,
 					"Access denied");
 		}
@@ -104,7 +109,7 @@ class CloudFoundrySecurityInterceptor {
 		String authorization = request.getHeader("Authorization");
 		String bearerPrefix = "bearer ";
 		if (authorization == null
-				|| !authorization.toLowerCase().startsWith(bearerPrefix)) {
+				|| !authorization.toLowerCase(Locale.ENGLISH).startsWith(bearerPrefix)) {
 			throw new CloudFoundryAuthorizationException(Reason.MISSING_AUTHORIZATION,
 					"Authorization header is missing or invalid");
 		}

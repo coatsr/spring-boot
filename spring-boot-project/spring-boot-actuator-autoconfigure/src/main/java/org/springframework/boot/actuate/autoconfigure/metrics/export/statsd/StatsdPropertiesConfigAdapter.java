@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,7 +48,7 @@ public class StatsdPropertiesConfigAdapter
 
 	@Override
 	public boolean enabled() {
-		return get(StatsdProperties::getEnabled, StatsdConfig.super::enabled);
+		return get(StatsdProperties::isEnabled, StatsdConfig.super::enabled);
 	}
 
 	@Override
@@ -74,13 +74,8 @@ public class StatsdPropertiesConfigAdapter
 	}
 
 	@Override
-	public int queueSize() {
-		return get(StatsdProperties::getQueueSize, StatsdConfig.super::queueSize);
-	}
-
-	@Override
 	public boolean publishUnchangedMeters() {
-		return get(StatsdProperties::getPublishUnchangedMeters,
+		return get(StatsdProperties::isPublishUnchangedMeters,
 				StatsdConfig.super::publishUnchangedMeters);
 	}
 

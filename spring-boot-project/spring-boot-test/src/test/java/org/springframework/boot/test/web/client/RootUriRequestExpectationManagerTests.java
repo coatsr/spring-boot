@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,9 +19,7 @@ package org.springframework.boot.test.web.client;
 import java.net.URI;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -37,6 +35,8 @@ import org.springframework.test.web.client.RequestMatcher;
 import org.springframework.web.client.RestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -51,10 +51,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
  */
 public class RootUriRequestExpectationManagerTests {
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
-
-	private String uri = "http://example.com";
+	private String uri = "https://example.com";
 
 	@Mock
 	private RequestExpectationManager delegate;
@@ -72,21 +69,22 @@ public class RootUriRequestExpectationManagerTests {
 
 	@Test
 	public void createWhenRootUriIsNullShouldThrowException() {
-		this.thrown.expect(IllegalArgumentException.class);
-		this.thrown.expectMessage("RootUri must not be null");
-		new RootUriRequestExpectationManager(null, this.delegate);
+		assertThatIllegalArgumentException()
+				.isThrownBy(
+						() -> new RootUriRequestExpectationManager(null, this.delegate))
+				.withMessageContaining("RootUri must not be null");
 	}
 
 	@Test
 	public void createWhenExpectationManagerIsNullShouldThrowException() {
-		this.thrown.expect(IllegalArgumentException.class);
-		this.thrown.expectMessage("ExpectationManager must not be null");
-		new RootUriRequestExpectationManager(this.uri, null);
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> new RootUriRequestExpectationManager(this.uri, null))
+				.withMessageContaining("ExpectationManager must not be null");
 	}
 
 	@Test
 	public void expectRequestShouldDelegateToExpectationManager() {
-		ExpectedCount count = mock(ExpectedCount.class);
+		ExpectedCount count = ExpectedCount.once();
 		RequestMatcher requestMatcher = mock(RequestMatcher.class);
 		this.manager.expectRequest(count, requestMatcher);
 		verify(this.delegate).expectRequest(count, requestMatcher);
@@ -96,7 +94,7 @@ public class RootUriRequestExpectationManagerTests {
 	public void validateRequestWhenUriDoesNotStartWithRootUriShouldDelegateToExpectationManager()
 			throws Exception {
 		ClientHttpRequest request = mock(ClientHttpRequest.class);
-		given(request.getURI()).willReturn(new URI("http://spring.io/test"));
+		given(request.getURI()).willReturn(new URI("https://spring.io/test"));
 		this.manager.validateRequest(request);
 		verify(this.delegate).validateRequest(request);
 	}
@@ -120,10 +118,11 @@ public class RootUriRequestExpectationManagerTests {
 		given(request.getURI()).willReturn(new URI(this.uri + "/hello"));
 		given(this.delegate.validateRequest(any(ClientHttpRequest.class)))
 				.willThrow(new AssertionError(
-						"Request URI expected:</hello> was:<http://example.com/bad>"));
-		this.thrown.expect(AssertionError.class);
-		this.thrown.expectMessage("Request URI expected:<http://example.com/hello>");
-		this.manager.validateRequest(request);
+						"Request URI expected:</hello> was:<https://example.com/bad>"));
+		assertThatExceptionOfType(AssertionError.class)
+				.isThrownBy(() -> this.manager.validateRequest(request))
+				.withMessageContaining(
+						"Request URI expected:<https://example.com/hello>");
 	}
 
 	@Test
@@ -168,7 +167,7 @@ public class RootUriRequestExpectationManagerTests {
 	@Test
 	public void boundRestTemplateShouldPrefixRootUri() {
 		RestTemplate restTemplate = new RestTemplateBuilder()
-				.rootUri("http://example.com").build();
+				.rootUri("https://example.com").build();
 		MockRestServiceServer server = RootUriRequestExpectationManager
 				.bindTo(restTemplate);
 		server.expect(requestTo("/hello")).andRespond(withSuccess());
@@ -178,14 +177,14 @@ public class RootUriRequestExpectationManagerTests {
 	@Test
 	public void boundRestTemplateWhenUrlIncludesDomainShouldNotPrefixRootUri() {
 		RestTemplate restTemplate = new RestTemplateBuilder()
-				.rootUri("http://example.com").build();
+				.rootUri("https://example.com").build();
 		MockRestServiceServer server = RootUriRequestExpectationManager
 				.bindTo(restTemplate);
 		server.expect(requestTo("/hello")).andRespond(withSuccess());
-		this.thrown.expect(AssertionError.class);
-		this.thrown.expectMessage(
-				"expected:<http://example.com/hello> but was:<http://spring.io/hello>");
-		restTemplate.getForEntity("http://spring.io/hello", String.class);
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(
+				() -> restTemplate.getForEntity("https://spring.io/hello", String.class))
+				.withMessageContaining(
+						"expected:<https://example.com/hello> but was:<https://spring.io/hello>");
 	}
 
 }

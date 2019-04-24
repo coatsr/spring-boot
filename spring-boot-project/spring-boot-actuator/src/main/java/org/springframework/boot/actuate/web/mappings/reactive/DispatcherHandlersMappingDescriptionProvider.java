@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import reactor.core.publisher.Mono;
 
+import org.springframework.boot.actuate.web.mappings.HandlerMethodDescription;
 import org.springframework.boot.actuate.web.mappings.MappingDescriptionProvider;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
@@ -121,8 +122,13 @@ public class DispatcherHandlersMappingDescriptionProvider
 
 		private DispatcherHandlerMappingDescription describe(
 				Entry<RequestMappingInfo, HandlerMethod> mapping) {
+			DispatcherHandlerMappingDetails handlerMapping = new DispatcherHandlerMappingDetails();
+			handlerMapping
+					.setHandlerMethod(new HandlerMethodDescription(mapping.getValue()));
+			handlerMapping.setRequestMappingConditions(
+					new RequestMappingConditionsDescription(mapping.getKey()));
 			return new DispatcherHandlerMappingDescription(mapping.getKey().toString(),
-					mapping.getValue().toString());
+					mapping.getValue().toString(), handlerMapping);
 		}
 
 	}
@@ -145,7 +151,8 @@ public class DispatcherHandlersMappingDescriptionProvider
 		private DispatcherHandlerMappingDescription describe(
 				Entry<PathPattern, Object> mapping) {
 			return new DispatcherHandlerMappingDescription(
-					mapping.getKey().getPatternString(), mapping.getValue().toString());
+					mapping.getKey().getPatternString(), mapping.getValue().toString(),
+					null);
 		}
 
 	}
@@ -186,8 +193,10 @@ public class DispatcherHandlersMappingDescriptionProvider
 		@Override
 		public void route(RequestPredicate predicate,
 				HandlerFunction<?> handlerFunction) {
+			DispatcherHandlerMappingDetails details = new DispatcherHandlerMappingDetails();
+			details.setHandlerFunction(new HandlerFunctionDescription(handlerFunction));
 			this.descriptions.add(new DispatcherHandlerMappingDescription(
-					predicate.toString(), handlerFunction.toString()));
+					predicate.toString(), handlerFunction.toString(), details));
 		}
 
 		@Override

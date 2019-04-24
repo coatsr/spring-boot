@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,6 +32,7 @@ import org.springframework.boot.web.context.ConfigurableWebServerApplicationCont
 import org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.util.ClassUtils;
 
 /**
  * A {@link ManagementContextFactory} for servlet-based web applications.
@@ -47,7 +48,7 @@ class ServletManagementContextFactory implements ManagementContextFactory {
 		child.setParent(parent);
 		List<Class<?>> combinedClasses = new ArrayList<>(Arrays.asList(configClasses));
 		combinedClasses.add(ServletWebServerFactoryAutoConfiguration.class);
-		child.register(combinedClasses.toArray(new Class<?>[combinedClasses.size()]));
+		child.register(ClassUtils.toClassArray(combinedClasses));
 		registerServletWebServerFactory(parent, child);
 		return child;
 	}

@@ -7,6 +7,7 @@ Andy Wilkinson
 :numbered:
 :icons: font
 :hide-uri-scheme:
+:docinfo: shared,private
 
 This API documentation describes Spring Boot Actuators web endpoints.
 
@@ -51,6 +52,7 @@ https://en.wikipedia.org/wiki/ISO_8601[ISO 8601].
 
 include::endpoints/auditevents.adoc[leveloffset=+1]
 include::endpoints/beans.adoc[leveloffset=+1]
+include::endpoints/caches.adoc[leveloffset=+1]
 include::endpoints/conditions.adoc[leveloffset=+1]
 include::endpoints/configprops.adoc[leveloffset=+1]
 include::endpoints/env.adoc[leveloffset=+1]
@@ -59,6 +61,7 @@ include::endpoints/health.adoc[leveloffset=+1]
 include::endpoints/heapdump.adoc[leveloffset=+1]
 include::endpoints/httptrace.adoc[leveloffset=+1]
 include::endpoints/info.adoc[leveloffset=+1]
+include::endpoints/integrationgraph.adoc[leveloffset=+1]
 include::endpoints/liquibase.adoc[leveloffset=+1]
 include::endpoints/logfile.adoc[leveloffset=+1]
 include::endpoints/loggers.adoc[leveloffset=+1]

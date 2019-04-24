@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.springframework.boot.actuate.trace.http;
 
 import java.net.URI;
 import java.security.Principal;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +25,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpHeaders;
 
@@ -102,14 +102,9 @@ public class HttpExchangeTracer {
 		if (!this.includes.contains(include)) {
 			return new LinkedHashMap<>();
 		}
-		Map<String, List<String>> headers = headersSupplier.get();
-		Iterator<String> keys = headers.keySet().iterator();
-		while (keys.hasNext()) {
-			if (!headerPredicate.test(keys.next())) {
-				keys.remove();
-			}
-		}
-		return headers;
+		return headersSupplier.get().entrySet().stream()
+				.filter((entry) -> headerPredicate.test(entry.getKey()))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
 
 	private final class FilteredTraceableRequest implements TraceableRequest {
@@ -132,8 +127,11 @@ public class HttpExchangeTracer {
 
 		@Override
 		public Map<String, List<String>> getHeaders() {
-			return getHeadersIfIncluded(Include.REQUEST_HEADERS,
-					this.delegate::getHeaders, this::includedHeader);
+			Map<String, List<String>> headers = getHeadersIfIncluded(
+					Include.REQUEST_HEADERS, this.delegate::getHeaders,
+					this::includedHeader);
+			postProcessRequestHeaders(headers);
+			return headers;
 		}
 
 		private boolean includedHeader(String name) {

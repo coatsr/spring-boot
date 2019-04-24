@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.boot.loader.util;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 
@@ -154,7 +155,7 @@ public abstract class SystemPropertyUtils {
 		if (propVal != null) {
 			return propVal;
 		}
-		return properties == null ? null : properties.getProperty(placeholderName);
+		return (properties != null) ? properties.getProperty(placeholderName) : null;
 	}
 
 	public static String getProperty(String key) {
@@ -184,11 +185,13 @@ public abstract class SystemPropertyUtils {
 			}
 			if (propVal == null) {
 				// Try with underscores.
-				propVal = System.getenv(key.replace('.', '_'));
+				String name = key.replace('.', '_');
+				propVal = System.getenv(name);
 			}
 			if (propVal == null) {
 				// Try uppercase with underscores as well.
-				propVal = System.getenv(key.toUpperCase().replace('.', '_'));
+				String name = key.toUpperCase(Locale.ENGLISH).replace('.', '_');
+				propVal = System.getenv(name);
 			}
 			if (propVal != null) {
 				return propVal;

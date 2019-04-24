@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -67,11 +67,13 @@ public class CustomHibernateJpaAutoConfigurationTests {
 				"spring.jpa.properties.hibernate.ejb.naming_strategy_delegator:"
 						+ "org.hibernate.cfg.naming.ImprovedNamingStrategyDelegator")
 				.run((context) -> {
-					JpaProperties bean = context.getBean(JpaProperties.class);
-					Map<String, Object> hibernateProperties = bean.getHibernateProperties(
-							new HibernateSettings().ddlAuto("create-drop"));
-					assertThat(hibernateProperties.get("hibernate.ejb.naming_strategy"))
-							.isNull();
+					JpaProperties jpaProperties = context.getBean(JpaProperties.class);
+					HibernateProperties hibernateProperties = context
+							.getBean(HibernateProperties.class);
+					Map<String, Object> properties = hibernateProperties
+							.determineHibernateProperties(jpaProperties.getProperties(),
+									new HibernateSettings());
+					assertThat(properties.get("hibernate.ejb.naming_strategy")).isNull();
 				});
 	}
 
@@ -108,24 +110,24 @@ public class CustomHibernateJpaAutoConfigurationTests {
 	}
 
 	@Test
-	public void defaultDatabaseForH2() {
+	public void defaultDatabaseIsSet() {
 		this.contextRunner.withPropertyValues("spring.datasource.url:jdbc:h2:mem:testdb",
 				"spring.datasource.initialization-mode:never").run((context) -> {
 					HibernateJpaVendorAdapter bean = context
 							.getBean(HibernateJpaVendorAdapter.class);
 					Database database = (Database) ReflectionTestUtils.getField(bean,
 							"database");
-					assertThat(database).isEqualTo(Database.H2);
+					assertThat(database).isEqualTo(Database.DEFAULT);
 				});
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@TestAutoConfigurationPackage(City.class)
 	protected static class TestConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class MockDataSourceConfiguration {
 
 		@Bean
@@ -136,7 +138,7 @@ public class CustomHibernateJpaAutoConfigurationTests {
 				given(dataSource.getConnection().getMetaData())
 						.willReturn(mock(DatabaseMetaData.class));
 			}
-			catch (SQLException e) {
+			catch (SQLException ex) {
 				// Do nothing
 			}
 			return dataSource;
@@ -144,7 +146,7 @@ public class CustomHibernateJpaAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class NamingStrategyConfiguration {
 
 		static final ImplicitNamingStrategy implicitNamingStrategy = new ImplicitNamingStrategyJpaCompliantImpl();
@@ -163,7 +165,7 @@ public class CustomHibernateJpaAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	static class HibernatePropertiesCustomizerConfiguration {
 
 		@Bean

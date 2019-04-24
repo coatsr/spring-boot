@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,9 +33,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class StatsdProperties {
 
 	/**
-	 * Whether exporting of metrics to this backend is enabled.
+	 * Whether exporting of metrics to StatsD is enabled.
 	 */
-	private Boolean enabled;
+	private boolean enabled = true;
 
 	/**
 	 * StatsD line protocol to use.
@@ -65,20 +65,15 @@ public class StatsdProperties {
 	private Duration pollingFrequency = Duration.ofSeconds(10);
 
 	/**
-	 * Maximum size of the queue of items waiting to be sent to the StatsD server.
+	 * Whether to send unchanged meters to the StatsD server.
 	 */
-	private Integer queueSize = Integer.MAX_VALUE;
+	private boolean publishUnchangedMeters = true;
 
-	/**
-	 * Send unchanged meters to the StatsD server.
-	 */
-	private Boolean publishUnchangedMeters;
-
-	public Boolean getEnabled() {
+	public boolean isEnabled() {
 		return this.enabled;
 	}
 
-	public void setEnabled(Boolean enabled) {
+	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
 
@@ -122,19 +117,11 @@ public class StatsdProperties {
 		this.pollingFrequency = pollingFrequency;
 	}
 
-	public Integer getQueueSize() {
-		return this.queueSize;
-	}
-
-	public void setQueueSize(Integer queueSize) {
-		this.queueSize = queueSize;
-	}
-
-	public Boolean getPublishUnchangedMeters() {
+	public boolean isPublishUnchangedMeters() {
 		return this.publishUnchangedMeters;
 	}
 
-	public void setPublishUnchangedMeters(Boolean publishUnchangedMeters) {
+	public void setPublishUnchangedMeters(boolean publishUnchangedMeters) {
 		this.publishUnchangedMeters = publishUnchangedMeters;
 	}
 

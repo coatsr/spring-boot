@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,6 +26,7 @@ import org.springframework.boot.actuate.autoconfigure.metrics.export.properties.
  * Adapter to convert {@link JmxProperties} to a {@link JmxConfig}.
  *
  * @author Jon Schneider
+ * @author Stephane Nicoll
  */
 class JmxPropertiesConfigAdapter extends PropertiesConfigAdapter<JmxProperties>
 		implements JmxConfig {
@@ -37,6 +38,11 @@ class JmxPropertiesConfigAdapter extends PropertiesConfigAdapter<JmxProperties>
 	@Override
 	public String get(String key) {
 		return null;
+	}
+
+	@Override
+	public String domain() {
+		return get(JmxProperties::getDomain, JmxConfig.super::domain);
 	}
 
 	@Override

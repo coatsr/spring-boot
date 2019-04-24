@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,11 +33,14 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
+import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.InterceptingClientHttpRequestFactory;
-import org.springframework.http.client.support.BasicAuthorizationInterceptor;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.support.BasicAuthenticationInterceptor;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.mock.http.client.MockClientHttpResponse;
@@ -83,15 +86,53 @@ public class TestRestTemplateTests {
 	}
 
 	@Test
+	public void doNotReplaceCustomRequestFactory() {
+		RestTemplateBuilder builder = new RestTemplateBuilder()
+				.requestFactory(OkHttp3ClientHttpRequestFactory.class);
+		TestRestTemplate testRestTemplate = new TestRestTemplate(builder);
+		assertThat(testRestTemplate.getRestTemplate().getRequestFactory())
+				.isInstanceOf(OkHttp3ClientHttpRequestFactory.class);
+	}
+
+	@Test
+	public void useTheSameRequestFactoryClassWithBasicAuth() {
+		OkHttp3ClientHttpRequestFactory customFactory = new OkHttp3ClientHttpRequestFactory();
+		RestTemplateBuilder builder = new RestTemplateBuilder()
+				.requestFactory(() -> customFactory);
+		TestRestTemplate testRestTemplate = new TestRestTemplate(builder)
+				.withBasicAuth("test", "test");
+		RestTemplate restTemplate = testRestTemplate.getRestTemplate();
+		Object requestFactory = ReflectionTestUtils
+				.getField(restTemplate.getRequestFactory(), "requestFactory");
+		assertThat(requestFactory).isNotEqualTo(customFactory)
+				.hasSameClassAs(customFactory);
+	}
+
+	@Test
+	public void withBasicAuthWhenRequestFactoryTypeCannotBeInstantiatedShouldFallback() {
+		TestClientHttpRequestFactory customFactory = new TestClientHttpRequestFactory(
+				"my-request-factory");
+		RestTemplateBuilder builder = new RestTemplateBuilder()
+				.requestFactory(() -> customFactory);
+		TestRestTemplate testRestTemplate = new TestRestTemplate(builder)
+				.withBasicAuth("test", "test");
+		RestTemplate restTemplate = testRestTemplate.getRestTemplate();
+		Object requestFactory = ReflectionTestUtils
+				.getField(restTemplate.getRequestFactory(), "requestFactory");
+		assertThat(requestFactory).isNotEqualTo(customFactory)
+				.isInstanceOf(CustomHttpComponentsClientHttpRequestFactory.class);
+	}
+
+	@Test
 	public void getRootUriRootUriSetViaRestTemplateBuilder() {
-		String rootUri = "http://example.com";
+		String rootUri = "https://example.com";
 		RestTemplateBuilder delegate = new RestTemplateBuilder().rootUri(rootUri);
 		assertThat(new TestRestTemplate(delegate).getRootUri()).isEqualTo(rootUri);
 	}
 
 	@Test
 	public void getRootUriRootUriSetViaLocalHostUriTemplateHandler() {
-		String rootUri = "http://example.com";
+		String rootUri = "https://example.com";
 		TestRestTemplate template = new TestRestTemplate();
 		LocalHostUriTemplateHandler templateHandler = mock(
 				LocalHostUriTemplateHandler.class);
@@ -125,11 +166,13 @@ public class TestRestTemplateTests {
 	@Test
 	public void restOperationsAreAvailable() {
 		RestTemplate delegate = mock(RestTemplate.class);
+		given(delegate.getRequestFactory())
+				.willReturn(new SimpleClientHttpRequestFactory());
 		given(delegate.getUriTemplateHandler())
 				.willReturn(new DefaultUriBuilderFactory());
 		RestTemplateBuilder builder = mock(RestTemplateBuilder.class);
 		given(builder.build()).willReturn(delegate);
-		final TestRestTemplate restTemplate = new TestRestTemplate(builder);
+		TestRestTemplate restTemplate = new TestRestTemplate(builder);
 		ReflectionUtils.doWithMethods(RestOperations.class, new MethodCallback() {
 
 			@Override
@@ -224,14 +267,15 @@ public class TestRestTemplateTests {
 	}
 
 	@Test
-	public void withBasicAuthDoesNotResetErrorHandler() {
+	public void withBasicAuthShouldUseNoOpErrorHandler() throws Exception {
 		TestRestTemplate originalTemplate = new TestRestTemplate("foo", "bar");
 		ResponseErrorHandler errorHandler = mock(ResponseErrorHandler.class);
 		originalTemplate.getRestTemplate().setErrorHandler(errorHandler);
 		TestRestTemplate basicAuthTemplate = originalTemplate.withBasicAuth("user",
 				"password");
 		assertThat(basicAuthTemplate.getRestTemplate().getErrorHandler())
-				.isSameAs(errorHandler);
+				.isInstanceOf(Class.forName(
+						"org.springframework.boot.test.web.client.TestRestTemplate$NoOpResponseErrorHandler"));
 	}
 
 	@Test
@@ -358,17 +402,28 @@ public class TestRestTemplateTests {
 						"interceptors");
 		assertThat(requestFactoryInterceptors).hasSize(1);
 		ClientHttpRequestInterceptor interceptor = requestFactoryInterceptors.get(0);
-		assertThat(interceptor).isInstanceOf(BasicAuthorizationInterceptor.class);
-		assertThat(ReflectionTestUtils.getField(interceptor, "username"))
-				.isEqualTo(username);
-		assertThat(ReflectionTestUtils.getField(interceptor, "password"))
-				.isEqualTo(password);
+		assertThat(interceptor).isInstanceOf(BasicAuthenticationInterceptor.class);
+		assertThat(interceptor).hasFieldOrPropertyWithValue("username", username);
+		assertThat(interceptor).hasFieldOrPropertyWithValue("password", password);
 
 	}
 
 	private interface TestRestTemplateCallback {
 
 		void doWithTestRestTemplate(TestRestTemplate testRestTemplate, URI relativeUri);
+
+	}
+
+	static class TestClientHttpRequestFactory implements ClientHttpRequestFactory {
+
+		TestClientHttpRequestFactory(String value) {
+		}
+
+		@Override
+		public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod)
+				throws IOException {
+			return null;
+		}
 
 	}
 

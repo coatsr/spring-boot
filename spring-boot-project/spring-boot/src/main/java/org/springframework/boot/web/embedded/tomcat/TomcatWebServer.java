@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import javax.naming.NamingException;
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Engine;
+import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Service;
@@ -86,14 +87,20 @@ public class TomcatWebServer implements WebServer {
 	}
 
 	private void initialize() throws WebServerException {
-		TomcatWebServer.logger
-				.info("Tomcat initialized with port(s): " + getPortsDescription(false));
+		logger.info("Tomcat initialized with port(s): " + getPortsDescription(false));
 		synchronized (this.monitor) {
 			try {
 				addInstanceIdToEngineName();
 
-				// Remove service connectors so that protocol binding doesn't happen yet
-				removeServiceConnectors();
+				Context context = findContext();
+				context.addLifecycleListener((event) -> {
+					if (context.equals(event.getSource())
+							&& Lifecycle.START_EVENT.equals(event.getType())) {
+						// Remove service connectors so that protocol binding doesn't
+						// happen when the service is started.
+						removeServiceConnectors();
+					}
+				});
 
 				// Start the server to trigger initialization listeners
 				this.tomcat.start();
@@ -101,7 +108,6 @@ public class TomcatWebServer implements WebServer {
 				// We can re-throw failure exception directly in the main thread
 				rethrowDeferredStartupExceptions();
 
-				Context context = findContext();
 				try {
 					ContextBindings.bindClassLoader(context, context.getNamingToken(),
 							getClass().getClassLoader());
@@ -115,6 +121,7 @@ public class TomcatWebServer implements WebServer {
 				startDaemonAwaitThread();
 			}
 			catch (Exception ex) {
+				stopSilently();
 				throw new WebServerException("Unable to start embedded Tomcat", ex);
 			}
 		}
@@ -190,13 +197,12 @@ public class TomcatWebServer implements WebServer {
 				addPreviouslyRemovedConnectors();
 				Connector connector = this.tomcat.getConnector();
 				if (connector != null && this.autoStart) {
-					startConnector();
+					performDeferredLoadOnStartup();
 				}
 				checkThatConnectorsHaveStarted();
 				this.started = true;
-				TomcatWebServer.logger
-						.info("Tomcat started on port(s): " + getPortsDescription(true)
-								+ " with context path '" + getContextPath() + "'");
+				logger.info("Tomcat started on port(s): " + getPortsDescription(true)
+						+ " with context path '" + getContextPath() + "'");
 			}
 			catch (ConnectorStartFailedException ex) {
 				stopSilently();
@@ -215,10 +221,15 @@ public class TomcatWebServer implements WebServer {
 	}
 
 	private void checkThatConnectorsHaveStarted() {
+		checkConnectorHasStarted(this.tomcat.getConnector());
 		for (Connector connector : this.tomcat.getService().findConnectors()) {
-			if (LifecycleState.FAILED.equals(connector.getState())) {
-				throw new ConnectorStartFailedException(connector.getPort());
-			}
+			checkConnectorHasStarted(connector);
+		}
+	}
+
+	private void checkConnectorHasStarted(Connector connector) {
+		if (LifecycleState.FAILED.equals(connector.getState())) {
+			throw new ConnectorStartFailedException(connector.getPort());
 		}
 	}
 
@@ -260,11 +271,11 @@ public class TomcatWebServer implements WebServer {
 			connector.getProtocolHandler().stop();
 		}
 		catch (Exception ex) {
-			TomcatWebServer.logger.error("Cannot pause connector: ", ex);
+			logger.error("Cannot pause connector: ", ex);
 		}
 	}
 
-	private void startConnector() {
+	private void performDeferredLoadOnStartup() {
 		try {
 			for (Container child : this.tomcat.getHost().findChildren()) {
 				if (child instanceof TomcatEmbeddedContext) {
@@ -273,7 +284,9 @@ public class TomcatWebServer implements WebServer {
 			}
 		}
 		catch (Exception ex) {
-			TomcatWebServer.logger.error("Cannot start connector: ", ex);
+			if (ex instanceof WebServerException) {
+				throw (WebServerException) ex;
+			}
 			throw new WebServerException("Unable to start embedded Tomcat connectors",
 					ex);
 		}
@@ -311,9 +324,11 @@ public class TomcatWebServer implements WebServer {
 	private String getPortsDescription(boolean localPort) {
 		StringBuilder ports = new StringBuilder();
 		for (Connector connector : this.tomcat.getService().findConnectors()) {
-			ports.append(ports.length() == 0 ? "" : " ");
-			int port = (localPort ? connector.getLocalPort() : connector.getPort());
-			ports.append(port + " (" + connector.getScheme() + ")");
+			if (ports.length() != 0) {
+				ports.append(' ');
+			}
+			int port = localPort ? connector.getLocalPort() : connector.getPort();
+			ports.append(port).append(" (").append(connector.getScheme()).append(')');
 		}
 		return ports.toString();
 	}
@@ -341,4 +356,5 @@ public class TomcatWebServer implements WebServer {
 	public Tomcat getTomcat() {
 		return this.tomcat;
 	}
+
 }

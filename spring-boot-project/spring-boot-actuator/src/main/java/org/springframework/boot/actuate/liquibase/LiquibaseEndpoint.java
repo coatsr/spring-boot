@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -69,7 +69,7 @@ public class LiquibaseEndpoint {
 							createReport(liquibase, service, factory)));
 			ApplicationContext parent = target.getParent();
 			contextBeans.put(target.getId(), new ContextLiquibaseBeans(liquibaseBeans,
-					parent == null ? null : parent.getId()));
+					(parent != null) ? parent.getId() : null));
 			target = parent;
 		}
 		return new ApplicationLiquibaseBeans(contextBeans);
@@ -80,18 +80,28 @@ public class LiquibaseEndpoint {
 		try {
 			DataSource dataSource = liquibase.getDataSource();
 			JdbcConnection connection = new JdbcConnection(dataSource.getConnection());
+			Database database = null;
 			try {
-				Database database = factory.findCorrectDatabaseImplementation(connection);
+				database = factory.findCorrectDatabaseImplementation(connection);
 				String defaultSchema = liquibase.getDefaultSchema();
 				if (StringUtils.hasText(defaultSchema)) {
 					database.setDefaultSchemaName(defaultSchema);
 				}
+				database.setDatabaseChangeLogTableName(
+						liquibase.getDatabaseChangeLogTable());
+				database.setDatabaseChangeLogLockTableName(
+						liquibase.getDatabaseChangeLogLockTable());
 				service.setDatabase(database);
 				return new LiquibaseBean(service.getRanChangeSets().stream()
 						.map(ChangeSet::new).collect(Collectors.toList()));
 			}
 			finally {
-				connection.close();
+				if (database != null) {
+					database.close();
+				}
+				else {
+					connection.close();
+				}
 			}
 		}
 		catch (Exception ex) {
@@ -204,8 +214,8 @@ public class LiquibaseEndpoint {
 			this.execType = ranChangeSet.getExecType();
 			this.id = ranChangeSet.getId();
 			this.labels = ranChangeSet.getLabels().getLabels();
-			this.checksum = ranChangeSet.getLastCheckSum() == null ? null
-					: ranChangeSet.getLastCheckSum().toString();
+			this.checksum = ((ranChangeSet.getLastCheckSum() != null)
+					? ranChangeSet.getLastCheckSum().toString() : null);
 			this.orderExecuted = ranChangeSet.getOrderExecuted();
 			this.tag = ranChangeSet.getTag();
 		}

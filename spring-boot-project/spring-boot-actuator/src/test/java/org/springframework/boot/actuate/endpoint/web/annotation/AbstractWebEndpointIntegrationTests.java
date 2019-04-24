@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import org.junit.Test;
 import reactor.core.publisher.Mono;
 
+import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.boot.actuate.endpoint.annotation.DeleteOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
@@ -167,7 +168,8 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 	public void readOperationWithMappingFailureProducesBadRequestResponse() {
 		load(QueryEndpointConfiguration.class, (client) -> {
 			WebTestClient.BodyContentSpec body = client.get().uri("/query?two=two")
-					.exchange().expectStatus().isBadRequest().expectBody();
+					.accept(MediaType.APPLICATION_JSON).exchange().expectStatus()
+					.isBadRequest().expectBody();
 			validateErrorBody(body, HttpStatus.BAD_REQUEST, "/endpoints/query",
 					"Missing parameters: one");
 		});
@@ -289,7 +291,8 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 	public void readOperationWithMissingRequiredParametersReturnsBadRequestResponse() {
 		load(RequiredParameterEndpointConfiguration.class, (client) -> {
 			WebTestClient.BodyContentSpec body = client.get().uri("/requiredparameters")
-					.exchange().expectStatus().isBadRequest().expectBody();
+					.accept(MediaType.APPLICATION_JSON).exchange().expectStatus()
+					.isBadRequest().expectBody();
 			validateErrorBody(body, HttpStatus.BAD_REQUEST,
 					"/endpoints/requiredparameters", "Missing parameters: foo");
 		});
@@ -361,6 +364,52 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 				.expectBody(String.class).isEqualTo("Zoe"));
 	}
 
+	@Test
+	public void securityContextIsAvailableAndHasNullPrincipalWhenRequestHasNoPrincipal() {
+		load(SecurityContextEndpointConfiguration.class,
+				(client) -> client.get().uri("/securitycontext")
+						.accept(MediaType.APPLICATION_JSON).exchange().expectStatus()
+						.isOk().expectBody(String.class).isEqualTo("None"));
+	}
+
+	@Test
+	public void securityContextIsAvailableAndHasPrincipalWhenRequestHasPrincipal() {
+		load((context) -> {
+			this.authenticatedContextCustomizer.accept(context);
+			context.register(SecurityContextEndpointConfiguration.class);
+		}, (client) -> client.get().uri("/securitycontext")
+				.accept(MediaType.APPLICATION_JSON).exchange().expectStatus().isOk()
+				.expectBody(String.class).isEqualTo("Alice"));
+	}
+
+	@Test
+	public void userInRoleReturnsFalseWhenRequestHasNoPrincipal() {
+		load(UserInRoleEndpointConfiguration.class,
+				(client) -> client.get().uri("/userinrole?role=ADMIN")
+						.accept(MediaType.APPLICATION_JSON).exchange().expectStatus()
+						.isOk().expectBody(String.class).isEqualTo("ADMIN: false"));
+	}
+
+	@Test
+	public void userInRoleReturnsFalseWhenUserIsNotInRole() {
+		load((context) -> {
+			this.authenticatedContextCustomizer.accept(context);
+			context.register(UserInRoleEndpointConfiguration.class);
+		}, (client) -> client.get().uri("/userinrole?role=ADMIN")
+				.accept(MediaType.APPLICATION_JSON).exchange().expectStatus().isOk()
+				.expectBody(String.class).isEqualTo("ADMIN: false"));
+	}
+
+	@Test
+	public void userInRoleReturnsTrueWhenUserIsInRole() {
+		load((context) -> {
+			this.authenticatedContextCustomizer.accept(context);
+			context.register(UserInRoleEndpointConfiguration.class);
+		}, (client) -> client.get().uri("/userinrole?role=ACTUATOR")
+				.accept(MediaType.APPLICATION_JSON).exchange().expectStatus().isOk()
+				.expectBody(String.class).isEqualTo("ACTUATOR: true"));
+	}
+
 	protected abstract int getPort(T context);
 
 	protected void validateErrorBody(WebTestClient.BodyContentSpec body,
@@ -413,7 +462,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 		}
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	protected static class TestEndpointConfiguration {
 
@@ -424,7 +473,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class QueryEndpointConfiguration {
 
@@ -435,7 +484,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class QueryWithListEndpointConfiguration {
 
@@ -446,7 +495,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class VoidWriteResponseEndpointConfiguration {
 
@@ -458,7 +507,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class VoidDeleteResponseEndpointConfiguration {
 
@@ -470,7 +519,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class NullWriteResponseEndpointConfiguration {
 
@@ -482,7 +531,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class NullReadResponseEndpointConfiguration {
 
@@ -493,7 +542,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class NullDeleteResponseEndpointConfiguration {
 
@@ -504,7 +553,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	protected static class ResourceEndpointConfiguration {
 
@@ -515,7 +564,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class ResourceWebEndpointResponseEndpointConfiguration {
 
@@ -526,7 +575,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class MonoResponseEndpointConfiguration {
 
@@ -537,7 +586,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class CustomMediaTypesEndpointConfiguration {
 
@@ -548,7 +597,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	static class RequiredParameterEndpointConfiguration {
 
@@ -559,7 +608,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	protected static class PrincipalEndpointConfiguration {
 
@@ -570,13 +619,35 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Import(BaseConfiguration.class)
 	protected static class PrincipalQueryEndpointConfiguration {
 
 		@Bean
 		public PrincipalQueryEndpoint principalQueryEndpoint() {
 			return new PrincipalQueryEndpoint();
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@Import(BaseConfiguration.class)
+	protected static class SecurityContextEndpointConfiguration {
+
+		@Bean
+		public SecurityContextEndpoint securityContextEndpoint() {
+			return new SecurityContextEndpoint();
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@Import(BaseConfiguration.class)
+	protected static class UserInRoleEndpointConfiguration {
+
+		@Bean
+		public UserInRoleEndpoint userInRoleEndpoint() {
+			return new UserInRoleEndpoint();
 		}
 
 	}
@@ -764,7 +835,7 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 
 		@ReadOperation
 		public String read(@Nullable Principal principal) {
-			return principal == null ? "None" : principal.getName();
+			return (principal != null) ? principal.getName() : "None";
 		}
 
 	}
@@ -775,6 +846,27 @@ public abstract class AbstractWebEndpointIntegrationTests<T extends Configurable
 		@ReadOperation
 		public String read(String principal) {
 			return principal;
+		}
+
+	}
+
+	@Endpoint(id = "securitycontext")
+	static class SecurityContextEndpoint {
+
+		@ReadOperation
+		public String read(SecurityContext securityContext) {
+			Principal principal = securityContext.getPrincipal();
+			return (principal != null) ? principal.getName() : "None";
+		}
+
+	}
+
+	@Endpoint(id = "userinrole")
+	static class UserInRoleEndpoint {
+
+		@ReadOperation
+		public String read(SecurityContext securityContext, String role) {
+			return role + ": " + securityContext.isUserInRole(role);
 		}
 
 	}

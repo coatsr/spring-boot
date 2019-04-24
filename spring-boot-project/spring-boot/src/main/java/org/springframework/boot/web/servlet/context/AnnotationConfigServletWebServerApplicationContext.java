@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,7 @@ import org.springframework.context.annotation.ScopeMetadataResolver;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.util.ClassUtils;
 
 /**
  * {@link ServletWebServerApplicationContext} that accepts annotated classes as input - in
@@ -50,7 +50,7 @@ import org.springframework.web.context.support.AnnotationConfigWebApplicationCon
  * @see #register(Class...)
  * @see #scan(String...)
  * @see ServletWebServerApplicationContext
- * @see AnnotationConfigWebApplicationContext
+ * @see AnnotationConfigServletWebApplicationContext
  */
 public class AnnotationConfigServletWebServerApplicationContext
 		extends ServletWebServerApplicationContext implements AnnotationConfigRegistry {
@@ -206,8 +206,7 @@ public class AnnotationConfigServletWebServerApplicationContext
 			this.scanner.scan(this.basePackages);
 		}
 		if (!this.annotatedClasses.isEmpty()) {
-			this.reader.register(this.annotatedClasses
-					.toArray(new Class<?>[this.annotatedClasses.size()]));
+			this.reader.register(ClassUtils.toClassArray(this.annotatedClasses));
 		}
 	}
 

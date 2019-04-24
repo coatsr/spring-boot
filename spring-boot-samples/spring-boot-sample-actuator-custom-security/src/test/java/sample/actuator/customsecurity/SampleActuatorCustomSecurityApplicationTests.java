@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -82,6 +82,15 @@ public class SampleActuatorCustomSecurityApplicationTests {
 	}
 
 	@Test
+	public void actuatorLinksIsSecure() {
+		ResponseEntity<Object> entity = restTemplate().getForEntity("/actuator",
+				Object.class);
+		assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+		entity = adminRestTemplate().getForEntity("/actuator", Object.class);
+		assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	@Test
 	public void actuatorSecureEndpointWithAnonymous() {
 		ResponseEntity<Object> entity = restTemplate().getForEntity("/actuator/env",
 				Object.class);
@@ -125,6 +134,22 @@ public class SampleActuatorCustomSecurityApplicationTests {
 		assertThat(entity.getHeaders().getFirst("echo")).isEqualTo("test");
 	}
 
+	@Test
+	public void actuatorExcludedFromEndpointRequestMatcher() {
+		ResponseEntity<Object> entity = userRestTemplate()
+				.getForEntity("/actuator/mappings", Object.class);
+		assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	@Test
+	public void mvcMatchersCanBeUsedToSecureActuators() {
+		ResponseEntity<Object> entity = beansRestTemplate()
+				.getForEntity("/actuator/beans", Object.class);
+		assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+		entity = beansRestTemplate().getForEntity("/actuator/beans/", Object.class);
+		assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
 	private TestRestTemplate restTemplate() {
 		return configure(new TestRestTemplate());
 	}
@@ -135,6 +160,10 @@ public class SampleActuatorCustomSecurityApplicationTests {
 
 	private TestRestTemplate userRestTemplate() {
 		return configure(new TestRestTemplate("user", "password"));
+	}
+
+	private TestRestTemplate beansRestTemplate() {
+		return configure(new TestRestTemplate("beans", "beans"));
 	}
 
 	private TestRestTemplate configure(TestRestTemplate restTemplate) {
